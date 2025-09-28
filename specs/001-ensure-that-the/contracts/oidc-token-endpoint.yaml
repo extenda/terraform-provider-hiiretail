@@ -1,0 +1,194 @@
+openapi: 3.0.3
+info:
+  title: OIDC Token Endpoint Contract
+  description: Contract specification for OIDC client credentials token endpoint
+  version: 1.0.0
+  
+servers:
+  - url: https://iam-api.retailsvc-test.com
+    description: Default test environment
+  - url: '{base_url}'
+    description: Configurable base URL
+    variables:
+      base_url:
+        default: https://iam-api.retailsvc-test.com
+        description: Base URL for the IAM API
+
+paths:
+  /oauth/token:
+    post:
+      summary: Obtain access token using client credentials
+      description: |
+        OIDC client credentials flow endpoint for obtaining access tokens.
+        Used by the Terraform provider for authentication.
+      operationId: getAccessToken
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required:
+                - grant_type
+                - client_id
+                - client_secret
+              properties:
+                grant_type:
+                  type: string
+                  enum: [client_credentials]
+                  description: OAuth2 grant type, must be 'client_credentials'
+                client_id:
+                  type: string
+                  description: OIDC client identifier
+                  minLength: 1
+                  maxLength: 255
+                client_secret:
+                  type: string
+                  description: OIDC client secret
+                  format: password
+                  minLength: 1
+                  maxLength: 255
+                scope:
+                  type: string
+                  description: Optional scope parameter
+                  example: "iam:read iam:write"
+            example:
+              grant_type: client_credentials
+              client_id: "hiiretail-terraform-provider"
+              client_secret: "super-secret-value"
+              scope: "iam:read iam:write"
+      responses:
+        '200':
+          description: Successfully obtained access token
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - access_token
+                  - token_type
+                  - expires_in
+                properties:
+                  access_token:
+                    type: string
+                    description: The access token for API authentication
+                    example: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+                  token_type:
+                    type: string
+                    enum: [Bearer]
+                    description: Token type, always 'Bearer'
+                  expires_in:
+                    type: integer
+                    description: Token lifetime in seconds
+                    minimum: 1
+                    maximum: 7200
+                    example: 3600
+                  scope:
+                    type: string
+                    description: Granted scopes
+                    example: "iam:read iam:write"
+                  refresh_token:
+                    type: string
+                    description: Refresh token (optional for client credentials)
+              example:
+                access_token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJoaWlyZXRhaWwtdGVycmFmb3JtLXByb3ZpZGVyIiwiaWF0IjoxNjM1MjU2MDAwLCJleHAiOjE2MzUyNTk2MDB9.signature"
+                token_type: "Bearer"
+                expires_in: 3600
+                scope: "iam:read iam:write"
+        '400':
+          description: Bad request - invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalid_grant_type:
+                  summary: Invalid grant type
+                  value:
+                    error: "unsupported_grant_type"
+                    error_description: "The authorization grant type is not supported"
+                missing_client_id:
+                  summary: Missing client ID
+                  value:
+                    error: "invalid_request"
+                    error_description: "Missing required parameter: client_id"
+                missing_client_secret:
+                  summary: Missing client secret
+                  value:
+                    error: "invalid_request"
+                    error_description: "Missing required parameter: client_secret"
+        '401':
+          description: Unauthorized - invalid client credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "invalid_client"
+                error_description: "Client authentication failed"
+        '429':
+          description: Too many requests - rate limit exceeded
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+              description: Seconds to wait before retrying
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "rate_limit_exceeded"
+                error_description: "Too many token requests. Please retry after 60 seconds"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "server_error"
+                error_description: "Internal server error occurred"
+
+components:
+  schemas:
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          description: Error code as per OAuth2 specification
+          enum:
+            - invalid_request
+            - invalid_client
+            - invalid_grant
+            - unauthorized_client
+            - unsupported_grant_type
+            - invalid_scope
+            - server_error
+            - temporarily_unavailable
+            - rate_limit_exceeded
+        error_description:
+          type: string
+          description: Human-readable error description
+          maxLength: 500
+        error_uri:
+          type: string
+          format: uri
+          description: Optional URI for additional error information
+
+  securitySchemes: {}
+
+security: []
+
+tags:
+  - name: Authentication
+    description: OIDC authentication endpoints
+
+externalDocs:
+  description: OAuth2 Client Credentials Grant RFC
+  url: https://tools.ietf.org/html/rfc6749#section-4.4
