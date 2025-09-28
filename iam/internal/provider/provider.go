@@ -14,6 +14,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"golang.org/x/oauth2/clientcredentials"
+
+	"github.com/extenda/hiiretail-terraform-providers/iam/internal/provider/resource_iam_group"
 )
 
 // Ensure HiiRetailIamProvider satisfies various provider interfaces.
@@ -144,7 +146,10 @@ func (p *HiiRetailIamProvider) Configure(ctx context.Context, req provider.Confi
 }
 
 func (p *HiiRetailIamProvider) Resources(ctx context.Context) []func() resource.Resource {
-	return []func() resource.Resource{}
+	return []func() resource.Resource{
+		// T027: Register Group resource with provider
+		resource_iam_group.NewIamGroupResource,
+	}
 }
 
 func (p *HiiRetailIamProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
