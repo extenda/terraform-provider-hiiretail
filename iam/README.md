@@ -8,6 +8,7 @@ This Terraform provider enables management of HiiRetail IAM resources using Terr
 - **Configurable Base URL**: Optional base_url parameter to connect to different API endpoints
 - **Comprehensive Error Handling**: Clear error messages for configuration and authentication issues
 - **Thorough Testing**: Full test coverage including unit tests and integration tests
+- **Group Management**: Complete CRUD operations for IAM groups with validation and error handling
 
 ## Requirements
 
@@ -61,6 +62,109 @@ export TF_VAR_tenant_id="your-tenant-id"
 export TF_VAR_client_id="your-oidc-client-id"
 export TF_VAR_client_secret="your-oidc-client-secret"
 export TF_VAR_base_url="https://custom-api.example.com"
+```
+
+## Resources
+
+### hiiretail_iam_group
+
+Manages IAM groups within a tenant.
+
+#### Example Usage
+
+```hcl
+# Basic group creation
+resource "hiiretail_iam_group" "developers" {
+  name = "developers"
+}
+
+# Group with description
+resource "hiiretail_iam_group" "admin_group" {
+  name        = "administrators"
+  description = "Administrative users with full system access"
+}
+
+# Group with explicit tenant
+resource "hiiretail_iam_group" "tenant_specific" {
+  name        = "tenant-users"
+  description = "Users specific to this tenant"
+  tenant_id   = "custom-tenant-id"
+}
+```
+
+#### Arguments Reference
+
+| Argument | Type | Required | Description |
+|----------|------|----------|-------------|
+| `name` | string | Yes | The name of the group (max 255 characters) |
+| `description` | string | No | Description of the group (max 255 characters) |
+| `tenant_id` | string | No | Tenant ID for the group (defaults to provider tenant_id) |
+
+#### Attributes Reference
+
+In addition to all arguments above, the following attributes are exported:
+
+| Attribute | Type | Description |
+|-----------|------|-------------|
+| `id` | string | The unique identifier of the group |
+| `status` | string | The current status of the group |
+
+#### Import
+
+Groups can be imported using their ID:
+
+```bash
+terraform import hiiretail_iam_group.example group-12345
+```
+
+#### Examples
+
+**Complete group management:**
+```hcl
+# Create multiple related groups
+resource "hiiretail_iam_group" "developers" {
+  name        = "developers"
+  description = "Software development team"
+}
+
+resource "hiiretail_iam_group" "qa_team" {
+  name        = "qa-engineers"
+  description = "Quality assurance engineers"
+}
+
+resource "hiiretail_iam_group" "devops" {
+  name        = "devops-engineers"
+  description = "DevOps and infrastructure team"
+}
+
+# Output group information
+output "developer_group_id" {
+  value = hiiretail_iam_group.developers.id
+}
+
+output "all_groups" {
+  value = {
+    developers = hiiretail_iam_group.developers
+    qa         = hiiretail_iam_group.qa_team
+    devops     = hiiretail_iam_group.devops
+  }
+}
+```
+
+**Multi-tenant setup:**
+```hcl
+# Groups for different tenants
+resource "hiiretail_iam_group" "tenant_a_users" {
+  name        = "users"
+  description = "Standard users for Tenant A"
+  tenant_id   = "tenant-a"
+}
+
+resource "hiiretail_iam_group" "tenant_b_users" {
+  name        = "users"
+  description = "Standard users for Tenant B"  
+  tenant_id   = "tenant-b"
+}
 ```
 
 ## Development
