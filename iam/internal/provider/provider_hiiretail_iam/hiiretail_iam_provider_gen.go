@@ -5,12 +5,43 @@ package provider_hiiretail_iam
 import (
 	"context"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 func HiiretailIamProviderSchema(ctx context.Context) schema.Schema {
-	return schema.Schema{}
+	return schema.Schema{
+		Description: "Terraform provider for Hii Retail IAM API",
+		Attributes: map[string]schema.Attribute{
+			"tenant_id": schema.StringAttribute{
+				Description: "Tenant ID to use for all IAM API requests",
+				Required:    true,
+			},
+			"base_url": schema.StringAttribute{
+				Description: "Base URL of the IAM API",
+				Optional:    true,
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(1),
+				},
+			},
+			"client_id": schema.StringAttribute{
+				Description: "OIDC client ID for IAM API authentication",
+				Required:    true,
+			},
+			"client_secret": schema.StringAttribute{
+				Description: "OIDC client secret for IAM API authentication",
+				Required:    true,
+				Sensitive:   true,
+			},
+		},
+	}
 }
 
 type HiiretailIamModel struct {
+	TenantId     types.String `tfsdk:"tenant_id"`
+	BaseUrl      types.String `tfsdk:"base_url"`
+	ClientId     types.String `tfsdk:"client_id"`
+	ClientSecret types.String `tfsdk:"client_secret"`
 }
