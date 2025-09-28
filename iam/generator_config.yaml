@@ -1,0 +1,122 @@
+provider:
+  name: hiiretail_iam
+  version: "0.1.0"
+  description: "Terraform provider for Hii Retail IAM API"
+  config:
+    tenant_id:
+      type: string
+      description: "Tenant ID to use for all IAM API requests"
+      required: true
+    base_url:
+      type: string
+      description: "Base URL of the IAM API"
+      required: false
+      default: "https://iam-api.retailsvc-test.com"
+    client_id:
+      type: string
+      description: "OIDC client ID for IAM API authentication"
+      required: true
+    client_secret:
+      type: string
+      description: "OIDC client secret for IAM API authentication"
+      required: true
+  authentication:
+    type: oauth2
+    grant_type: client_credentials
+    token_url: "${base_url}/oauth/token"
+    client_id: "${client_id}"
+    client_secret: "${client_secret}"
+
+resources:
+  iam_group:
+    create:
+      path: /api/v1/tenants/{tenantId}/groups
+      method: POST
+    read:
+      path: /api/v1/tenants/{tenantId}/groups/{id}
+      method: GET
+    update:
+      path: /api/v1/tenants/{tenantId}/groups/{id}
+      method: PUT
+    delete:
+      path: /api/v1/tenants/{tenantId}/groups/{id}
+      method: DELETE
+    id_attribute: id
+    path_parameters:
+      tenantId: "${tenant_id}"
+
+  iam_role_binding:
+    create:
+      path: /api/v2/tenants/{tenantId}/groups/{id}/roles
+      method: POST
+    read:
+      path: /api/v2/tenants/{tenantId}/groups/{id}/roles
+      method: GET
+    update:
+      path: /api/v2/tenants/{tenantId}/groups/{id}/roles/{roleId}
+      method: PUT
+    id_attribute: roleId
+    path_parameters:
+      tenantId: "${tenant_id}"
+
+  iam_role:
+    create:
+      path: /api/v1/roles
+      method: POST
+    read:
+      path: /api/v1/roles/{id}
+      method: GET
+    update:
+      path: /api/v1/roles/{id}
+      method: PUT
+    delete:
+      path: /api/v1/roles/{id}
+      method: DELETE
+    id_attribute: id
+
+  iam_custom_role:
+    create:
+      path: /api/v1/tenants/{tenantId}/roles
+      method: POST
+    read:
+      path: /api/v1/tenants/{tenantId}/roles/{id}
+      method: GET
+    update:
+      path: /api/v1/tenants/{tenantId}/roles/{id}
+      method: PUT
+    delete:
+      path: /api/v1/tenants/{tenantId}/roles/{id}
+      method: DELETE
+    id_attribute: id
+    path_parameters:
+      tenantId: "${tenant_id}"
+
+  iam_resource:
+    create:
+      path: /api/v1/tenants/{tenantId}/resources/{id}
+      method: PUT
+    read:
+      path: /api/v1/tenants/{tenantId}/resources/{id}
+      method: GET
+    update:
+      path: /api/v1/tenants/{tenantId}/resources/{id}
+      method: PUT
+    delete:
+      path: /api/v1/tenants/{tenantId}/resources/{id}
+      method: DELETE
+    id_attribute: id
+    path_parameters:
+      tenantId: "${tenant_id}"
+    schema_overrides:
+      properties:
+        id:
+          type: string
+          description: "Unique identifier of the resource (server-generated)."
+          computed: true
+        name:
+          type: string
+          description: "Human-readable name of the resource."
+          required: true
+        props:
+          type: map(any)
+          description: "Flexible key-value properties for the resource. Accepts strings, numbers, booleans, arrays, or objects."

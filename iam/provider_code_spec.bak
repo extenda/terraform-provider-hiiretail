@@ -1,0 +1,280 @@
+{
+	"provider": {
+		"name": "hiiretail_iam"
+	},
+	"resources": [
+		{
+			"name": "iam_custom_role",
+			"schema": {
+				"attributes": [
+					{
+						"name": "id",
+						"string": {
+							"computed_optional_required": "required"
+						}
+					},
+					{
+						"name": "name",
+						"string": {
+							"computed_optional_required": "computed_optional",
+							"validators": [
+								{
+									"custom": {
+										"imports": [
+											{
+												"path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+											}
+										],
+										"schema_definition": "stringvalidator.LengthBetween(3, 256)"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "permissions",
+						"list_nested": {
+							"computed_optional_required": "required",
+							"nested_object": {
+								"attributes": [
+									{
+										"name": "attributes",
+										"single_nested": {
+											"computed_optional_required": "computed_optional",
+											"description": "attributes must be an object with up to 10 props keys up to 40 chars values as strings up to 256 chars"
+										}
+									},
+									{
+										"name": "id",
+										"string": {
+											"computed_optional_required": "required",
+											"description": "Permission id must follow the pattern: {systemPrefix}.{resource}.{action} and contain a-z letters and hyphens where the systemPrefix size is 3, the resource and action parts are between 2 and 16 characters.",
+											"validators": [
+												{
+													"custom": {
+														"imports": [
+															{
+																"path": "regexp"
+															},
+															{
+																"path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+															}
+														],
+														"schema_definition": "stringvalidator.RegexMatches(regexp.MustCompile(\"^[a-z][-a-z]{2}\\\\.[a-z][-a-z]{1,15}\\\\.[a-z][-a-z]{1,15}$\"), \"\")"
+													}
+												}
+											]
+										}
+									},
+									{
+										"name": "alias",
+										"string": {
+											"computed_optional_required": "computed"
+										}
+									}
+								]
+							},
+							"description": "Only 100 permissions per role is allowed. The only exception is pos permissions, we allow up to 500 of them "
+						}
+					},
+					{
+						"name": "tenant_id",
+						"string": {
+							"computed_optional_required": "computed_optional"
+						}
+					}
+				]
+			}
+		},
+		{
+			"name": "iam_group",
+			"schema": {
+				"attributes": [
+					{
+						"name": "description",
+						"string": {
+							"computed_optional_required": "computed_optional",
+							"validators": [
+								{
+									"custom": {
+										"imports": [
+											{
+												"path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+											}
+										],
+										"schema_definition": "stringvalidator.LengthAtMost(255)"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "id",
+						"string": {
+							"computed_optional_required": "computed_optional",
+							"description": "An optional id of a group. Will be auto-generated if not passed"
+						}
+					},
+					{
+						"name": "name",
+						"string": {
+							"computed_optional_required": "required",
+							"validators": [
+								{
+									"custom": {
+										"imports": [
+											{
+												"path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+											}
+										],
+										"schema_definition": "stringvalidator.LengthAtMost(255)"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "status",
+						"string": {
+							"computed_optional_required": "computed"
+						}
+					},
+					{
+						"name": "tenant_id",
+						"string": {
+							"computed_optional_required": "computed_optional"
+						}
+					}
+				]
+			}
+		},
+		{
+			"name": "iam_role",
+			"schema": {
+				"attributes": [
+					{
+						"name": "fixed_bindings",
+						"list": {
+							"computed_optional_required": "computed_optional",
+							"element_type": {
+								"string": {}
+							}
+						}
+					},
+					{
+						"name": "id",
+						"string": {
+							"computed_optional_required": "required",
+							"description": "Role id must follow the pattern: {systemPrefix}.{role} and contain a-z letters and hyphens where the systemPrefix size is 3 and role is between 2 and 30 characters.",
+							"validators": [
+								{
+									"custom": {
+										"imports": [
+											{
+												"path": "regexp"
+											},
+											{
+												"path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+											}
+										],
+										"schema_definition": "stringvalidator.RegexMatches(regexp.MustCompile(\"^[a-z][-a-z]{2}\\\\.[a-z][-a-z]{1,29}$\"), \"\")"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "name",
+						"string": {
+							"computed_optional_required": "computed_optional",
+							"validators": [
+								{
+									"custom": {
+										"imports": [
+											{
+												"path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+											}
+										],
+										"schema_definition": "stringvalidator.LengthBetween(3, 256)"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "permissions",
+						"list": {
+							"computed_optional_required": "required",
+							"element_type": {
+								"string": {}
+							}
+						}
+					},
+					{
+						"name": "return_aliases",
+						"bool": {
+							"computed_optional_required": "computed_optional",
+							"description": "If set to true, permissions array will contain permission aliases instead of permission ids (or id if no alias is found)"
+						}
+					}
+				]
+			}
+		},
+		{
+			"name": "iam_role_binding",
+			"schema": {
+				"attributes": [
+					{
+						"name": "bindings",
+						"list": {
+							"computed_optional_required": "required",
+							"element_type": {
+								"string": {}
+							},
+							"validators": [
+								{
+									"custom": {
+										"imports": [
+											{
+												"path": "github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
+											}
+										],
+										"schema_definition": "listvalidator.SizeAtMost(10)"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "is_custom",
+						"bool": {
+							"computed_optional_required": "computed_optional",
+							"default": {
+								"static": false
+							}
+						}
+					},
+					{
+						"name": "role_id",
+						"string": {
+							"computed_optional_required": "required"
+						}
+					},
+					{
+						"name": "tenant_id",
+						"string": {
+							"computed_optional_required": "computed_optional"
+						}
+					},
+					{
+						"name": "id",
+						"string": {
+							"computed_optional_required": "computed_optional"
+						}
+					}
+				]
+			}
+		}
+	],
+	"version": "0.1"
+}
