@@ -1,0 +1,351 @@
+openapi: 3.0.3
+info:
+  title: HiiRetail IAM Groups API
+  description: API contract for IAM Group resource testing in Terraform Provider
+  version: 1.0.0
+  contact:
+    name: HiiRetail IAM Team
+    email: iam-team@hiiretail.com
+
+servers:
+  - url: https://api.hiiretail.com/iam/v1
+    description: Production IAM API
+  - url: https://api-staging.hiiretail.com/iam/v1
+    description: Staging IAM API
+
+security:
+  - OAuth2ClientCredentials: []
+
+paths:
+  /groups:
+    get:
+      summary: List IAM groups
+      description: Retrieve a list of IAM groups with optional filtering
+      parameters:
+        - name: tenant_id
+          in: query
+          description: Filter groups by tenant ID
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: Maximum number of groups to return
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: offset
+          in: query
+          description: Number of groups to skip for pagination
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        '200':
+          description: List of groups retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  groups:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Group'
+                  total:
+                    type: integer
+                  limit:
+                    type: integer
+                  offset:
+                    type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      summary: Create IAM group
+      description: Create a new IAM group with specified properties
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GroupCreate'
+      responses:
+        '201':
+          description: Group created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Group'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /groups/{id}:
+    parameters:
+      - name: id
+        in: path
+        description: Unique identifier of the group
+        required: true
+        schema:
+          type: string
+
+    get:
+      summary: Get IAM group by ID
+      description: Retrieve a specific IAM group by its unique identifier
+      responses:
+        '200':
+          description: Group retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Group'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    put:
+      summary: Update IAM group
+      description: Update an existing IAM group with new properties
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GroupUpdate'
+      responses:
+        '200':
+          description: Group updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Group'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      summary: Delete IAM group
+      description: Delete an existing IAM group by its unique identifier
+      responses:
+        '204':
+          description: Group deleted successfully
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    OAuth2ClientCredentials:
+      type: oauth2
+      flows:
+        clientCredentials:
+          tokenUrl: https://auth.hiiretail.com/oauth2/token
+          scopes:
+            iam:groups:read: Read access to groups
+            iam:groups:write: Write access to groups
+            iam:groups:delete: Delete access to groups
+
+  schemas:
+    Group:
+      type: object
+      required:
+        - id
+        - name
+        - status
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the group
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        name:
+          type: string
+          description: Human-readable name for the group
+          maxLength: 255
+          example: "developers"
+        description:
+          type: string
+          description: Optional description of the group's purpose
+          maxLength: 255
+          example: "Development team members with code access"
+        status:
+          type: string
+          description: Current status of the group
+          enum: [active, inactive, pending, deleted]
+          example: "active"
+        tenant_id:
+          type: string
+          description: Tenant identifier for multi-tenant isolation
+          example: "tenant-123"
+        created_at:
+          type: string
+          format: date-time
+          description: Timestamp when the group was created
+          example: "2025-09-28T10:30:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          description: Timestamp when the group was last updated
+          example: "2025-09-28T15:45:00Z"
+
+    GroupCreate:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          description: Human-readable name for the group
+          maxLength: 255
+          example: "developers"
+        description:
+          type: string
+          description: Optional description of the group's purpose
+          maxLength: 255
+          example: "Development team members with code access"
+        tenant_id:
+          type: string
+          description: Optional tenant identifier (inherited from auth context if not provided)
+          example: "tenant-123"
+
+    GroupUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Human-readable name for the group
+          maxLength: 255
+          example: "senior-developers"
+        description:
+          type: string
+          description: Optional description of the group's purpose
+          maxLength: 255
+          example: "Senior development team members with elevated access"
+
+    Error:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          description: Human-readable error message
+        code:
+          type: string
+          description: Machine-readable error code
+        details:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+                description: Field name that caused the error
+              message:
+                type: string
+                description: Specific error message for the field
+              code:
+                type: string
+                description: Specific error code for the field
+
+  responses:
+    BadRequest:
+      description: Bad request - invalid input data
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            message: "Validation failed"
+            code: "VALIDATION_ERROR"
+            details:
+              - field: "name"
+                message: "Name cannot be empty"
+                code: "REQUIRED_FIELD"
+
+    Unauthorized:
+      description: Unauthorized - invalid or missing authentication
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            message: "Authentication required"
+            code: "UNAUTHORIZED"
+
+    Forbidden:
+      description: Forbidden - insufficient permissions
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            message: "Insufficient permissions to access groups"
+            code: "FORBIDDEN"
+
+    NotFound:
+      description: Not found - resource does not exist
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            message: "Group not found"
+            code: "NOT_FOUND"
+
+    Conflict:
+      description: Conflict - resource already exists or constraint violation
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            message: "Group with this name already exists"
+            code: "CONFLICT"
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            message: "Internal server error"
+            code: "INTERNAL_ERROR"
