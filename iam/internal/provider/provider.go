@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"os"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -13,8 +15,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/clientcredentials"
 
+	"github.com/extenda/hiiretail-terraform-providers/iam/internal/provider/resource_iam_custom_role"
 	"github.com/extenda/hiiretail-terraform-providers/iam/internal/provider/resource_iam_group"
 )
 
@@ -35,7 +39,7 @@ type HiiRetailIamProviderModel struct {
 }
 
 func (p *HiiRetailIamProvider) Metadata(ctx context.Context, req provider.MetadataRequest, resp *provider.MetadataResponse) {
-	resp.TypeName = "hiiretail_iam"
+	resp.TypeName = "hiiretail-iam"
 	resp.Version = p.version
 }
 
@@ -44,23 +48,23 @@ func (p *HiiRetailIamProvider) Schema(ctx context.Context, req provider.SchemaRe
 		Description: "Terraform provider for Hii Retail IAM API",
 		Attributes: map[string]schema.Attribute{
 			"tenant_id": schema.StringAttribute{
-				Description: "Tenant ID to use for all IAM API requests",
-				Required:    true,
+				Description: "Tenant ID to use for all IAM API requests. Can be set via HIIRETAIL_TENANT_ID environment variable.",
+				Optional:    true,
 			},
 			"base_url": schema.StringAttribute{
-				Description: "Base URL of the IAM API. Defaults to https://iam-api.retailsvc-test.com",
+				Description: "Base URL of the IAM API. Defaults to https://iam-api.retailsvc-test.com. Can be set via HIIRETAIL_BASE_URL environment variable.",
 				Optional:    true,
 				Validators: []validator.String{
 					stringvalidator.LengthAtLeast(1),
 				},
 			},
 			"client_id": schema.StringAttribute{
-				Description: "OIDC client ID for IAM API authentication",
-				Required:    true,
+				Description: "OIDC client ID for IAM API authentication. Can be set via HIIRETAIL_CLIENT_ID environment variable.",
+				Optional:    true,
 			},
 			"client_secret": schema.StringAttribute{
-				Description: "OIDC client secret for IAM API authentication",
-				Required:    true,
+				Description: "OIDC client secret for IAM API authentication. Can be set via HIIRETAIL_CLIENT_SECRET environment variable.",
+				Optional:    true,
 				Sensitive:   true,
 			},
 		},
@@ -76,10 +80,38 @@ func (p *HiiRetailIamProvider) Configure(ctx context.Context, req provider.Confi
 		return
 	}
 
-	// Set default base URL if not provided
-	baseUrl := "https://iam-api.retailsvc-test.com"
+	// Get configuration values from attributes or environment variables
+	var tenantId, baseUrl, clientId, clientSecret string
+
+	// Tenant ID
+	if !data.TenantId.IsNull() && !data.TenantId.IsUnknown() {
+		tenantId = data.TenantId.ValueString()
+	} else {
+		tenantId = os.Getenv("HIIRETAIL_TENANT_ID")
+	}
+
+	// Base URL
 	if !data.BaseUrl.IsNull() && !data.BaseUrl.IsUnknown() {
 		baseUrl = data.BaseUrl.ValueString()
+	} else {
+		baseUrl = os.Getenv("HIIRETAIL_BASE_URL")
+		if baseUrl == "" {
+			baseUrl = "https://iam-api.retailsvc-test.com"
+		}
+	}
+
+	// Client ID
+	if !data.ClientId.IsNull() && !data.ClientId.IsUnknown() {
+		clientId = data.ClientId.ValueString()
+	} else {
+		clientId = os.Getenv("HIIRETAIL_CLIENT_ID")
+	}
+
+	// Client Secret
+	if !data.ClientSecret.IsNull() && !data.ClientSecret.IsUnknown() {
+		clientSecret = data.ClientSecret.ValueString()
+	} else {
+		clientSecret = os.Getenv("HIIRETAIL_CLIENT_SECRET")
 	}
 
 	// Validate base URL format
@@ -93,51 +125,52 @@ func (p *HiiRetailIamProvider) Configure(ctx context.Context, req provider.Confi
 	}
 
 	// Validate required fields
-	if data.TenantId.IsNull() || data.TenantId.IsUnknown() || data.TenantId.ValueString() == "" {
+	if tenantId == "" {
 		resp.Diagnostics.AddError(
 			"Missing tenant_id",
-			"The tenant_id parameter is required",
+			"The tenant_id parameter is required. Set it in the provider configuration or via HIIRETAIL_TENANT_ID environment variable.",
 		)
 		return
 	}
 
-	if data.ClientId.IsNull() || data.ClientId.IsUnknown() || data.ClientId.ValueString() == "" {
+	if clientId == "" {
 		resp.Diagnostics.AddError(
 			"Missing client_id",
-			"The client_id parameter is required for OIDC authentication",
+			"The client_id parameter is required for OIDC authentication. Set it in the provider configuration or via HIIRETAIL_CLIENT_ID environment variable.",
 		)
 		return
 	}
 
-	if data.ClientSecret.IsNull() || data.ClientSecret.IsUnknown() || data.ClientSecret.ValueString() == "" {
+	if clientSecret == "" {
 		resp.Diagnostics.AddError(
 			"Missing client_secret",
-			"The client_secret parameter is required for OIDC authentication",
+			"The client_secret parameter is required for OIDC authentication. Set it in the provider configuration or via HIIRETAIL_CLIENT_SECRET environment variable.",
 		)
 		return
 	}
 
 	// Configure OIDC client credentials flow
 	config := &clientcredentials.Config{
-		ClientID:     data.ClientId.ValueString(),
-		ClientSecret: data.ClientSecret.ValueString(),
-		TokenURL:     fmt.Sprintf("%s/oauth/token", baseUrl),
+		ClientID:     clientId,
+		ClientSecret: clientSecret,
+		TokenURL:     fmt.Sprintf("%s/oauth2/token", baseUrl),
 	}
 
-	// Test the OIDC authentication
-	httpClient := config.Client(ctx)
-	if httpClient == nil {
-		resp.Diagnostics.AddError(
-			"OIDC Configuration Error",
-			"Failed to create OIDC client",
-		)
-		return
+	// Create HTTP client with OAuth2 configuration and shorter timeout for test environments
+	// Note: Token acquisition is lazy - happens on first API call, not during provider configuration
+	baseHTTPClient := &http.Client{
+		Timeout: 10 * time.Second, // Shorter timeout for tests
 	}
+
+	// Create OAuth2 context that won't be canceled when Terraform operations timeout
+	// Use background context to avoid context cancellation issues during token acquisition
+	oauthCtx := context.WithValue(context.Background(), oauth2.HTTPClient, baseHTTPClient)
+	httpClient := config.Client(oauthCtx)
 
 	// Create API client configuration
 	apiClient := &APIClient{
 		BaseURL:    baseUrl,
-		TenantID:   data.TenantId.ValueString(),
+		TenantID:   tenantId,
 		HTTPClient: httpClient,
 	}
 
@@ -149,6 +182,8 @@ func (p *HiiRetailIamProvider) Resources(ctx context.Context) []func() resource.
 	return []func() resource.Resource{
 		// T027: Register Group resource with provider
 		resource_iam_group.NewIamGroupResource,
+		// T001: Register Custom Role resource with provider
+		resource_iam_custom_role.NewIamCustomRoleResource,
 	}
 }
 

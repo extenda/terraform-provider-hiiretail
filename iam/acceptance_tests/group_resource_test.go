@@ -6,8 +6,12 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/hashicorp/terraform-plugin-framework/providerserver"
+	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
+
+	"github.com/extenda/hiiretail-terraform-providers/iam/internal/provider"
 )
 
 // TestAccGroupResource_basic tests basic group creation and management
@@ -357,4 +361,10 @@ func stringRepeat(s string, count int) string {
 }
 
 // TODO: These will need to be imported and implemented when the provider is properly structured
-var testAccProtoV6ProviderFactories map[string]func() (interface{}, error)
+// testAccProtoV6ProviderFactories are used to instantiate a provider during
+// acceptance testing. The factory function will be invoked for every Terraform
+// CLI command executed to create a provider server to which the CLI can
+// reattach.
+var testAccProtoV6ProviderFactories = map[string]func() (tfprotov6.ProviderServer, error){
+	"hiiretail-iam": providerserver.NewProtocol6WithError(provider.New("test")()),
+}

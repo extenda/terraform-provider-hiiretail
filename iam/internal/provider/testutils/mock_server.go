@@ -84,6 +84,10 @@ func (env *TestEnvironment) SetupMockServer(t *testing.T) {
 	mux.HandleFunc("/iam/v1/groups", env.handleGroupsCollection)
 	mux.HandleFunc("/iam/v1/groups/", env.handleGroupsResource)
 
+	// Mock Custom Roles API endpoints (T003)
+	mux.HandleFunc("/iam/v1/custom-roles", env.handleCustomRolesCollection)
+	mux.HandleFunc("/iam/v1/custom-roles/", env.handleCustomRolesResource)
+
 	env.MockServer = httptest.NewServer(mux)
 	env.BaseURL = env.MockServer.URL
 
@@ -333,6 +337,515 @@ type ValidationError struct {
 	Field   string `json:"field"`
 	Message string `json:"message"`
 	Code    string `json:"code"`
+}
+
+// ========== Custom Role Handlers (T003) ==========
+
+// handleCustomRolesCollection handles requests to /custom-roles (collection operations)
+func (env *TestEnvironment) handleCustomRolesCollection(w http.ResponseWriter, r *http.Request) {
+	// Validate authorization header
+	if !env.validateAuth(w, r) {
+		return
+	}
+
+	switch r.Method {
+	case http.MethodGet:
+		env.handleListCustomRoles(w, r)
+	case http.MethodPost:
+		env.handleCreateCustomRole(w, r)
+	default:
+		w.WriteHeader(http.StatusMethodNotAllowed)
+	}
+}
+
+// handleCustomRolesResource handles requests to /custom-roles/{id} (individual resource operations)
+func (env *TestEnvironment) handleCustomRolesResource(w http.ResponseWriter, r *http.Request) {
+	// Validate authorization header
+	if !env.validateAuth(w, r) {
+		return
+	}
+
+	// Extract role ID from path
+	path := strings.TrimPrefix(r.URL.Path, "/iam/v1/custom-roles/")
+	if path == "" {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	switch r.Method {
+	case http.MethodGet:
+		env.handleGetCustomRole(w, r, path)
+	case http.MethodPut:
+		env.handleUpdateCustomRole(w, r, path)
+	case http.MethodDelete:
+		env.handleDeleteCustomRole(w, r, path)
+	default:
+		w.WriteHeader(http.StatusMethodNotAllowed)
+	}
+}
+
+// handleListCustomRoles handles GET /custom-roles
+func (env *TestEnvironment) handleListCustomRoles(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"custom_roles": []map[string]interface{}{
+			{
+				"id":        "role-123",
+				"name":      "test-custom-role",
+				"tenant_id": env.TenantID,
+				"permissions": []map[string]interface{}{
+					{
+						"id":    "pos.payment.create",
+						"alias": "Create Payment",
+						"attributes": map[string]string{
+							"department": "finance",
+						},
+					},
+				},
+				"created_at": "2025-09-28T10:30:00Z",
+				"updated_at": "2025-09-28T10:30:00Z",
+			},
+		},
+		"total":  1,
+		"limit":  20,
+		"offset": 0,
+	})
+}
+
+// handleCreateCustomRole handles POST /custom-roles
+func (env *TestEnvironment) handleCreateCustomRole(w http.ResponseWriter, r *http.Request) {
+	var req map[string]interface{}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{
+			"message": "Invalid JSON",
+			"code":    "VALIDATION_ERROR",
+		})
+		return
+	}
+
+	// Validate required fields
+	id, ok := req["id"].(string)
+	if !ok || id == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(ErrorResponse{
+			Message: "Validation failed",
+			Code:    "VALIDATION_ERROR",
+			Details: []ValidationError{
+				{
+					Field:   "id",
+					Message: "ID is required",
+					Code:    "REQUIRED_FIELD",
+				},
+			},
+		})
+		return
+	}
+
+	permissions, ok := req["permissions"].([]interface{})
+	if !ok || len(permissions) == 0 {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(ErrorResponse{
+			Message: "Validation failed",
+			Code:    "VALIDATION_ERROR",
+			Details: []ValidationError{
+				{
+					Field:   "permissions",
+					Message: "At least one permission is required",
+					Code:    "REQUIRED_FIELD",
+				},
+			},
+		})
+		return
+	}
+
+	// Validate permission patterns and limits
+	if err := env.validatePermissions(permissions); err != nil {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		json.NewEncoder(w).Encode(err)
+		return
+	}
+
+	// Check for duplicate ID (simulate conflict)
+	if id == "duplicate-role" {
+		w.WriteHeader(http.StatusConflict)
+		json.NewEncoder(w).Encode(map[string]string{
+			"message": "Custom role with this ID already exists",
+			"code":    "CONFLICT",
+		})
+		return
+	}
+
+	// Create successful response with computed fields
+	processedPermissions := env.processPermissions(permissions)
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"id":          id,
+		"name":        req["name"],
+		"tenant_id":   env.TenantID,
+		"permissions": processedPermissions,
+		"created_at":  "2025-09-28T15:30:00Z",
+		"updated_at":  "2025-09-28T15:30:00Z",
+	})
+}
+
+// handleGetCustomRole handles GET /custom-roles/{id}
+func (env *TestEnvironment) handleGetCustomRole(w http.ResponseWriter, r *http.Request, roleID string) {
+	// Simulate not found for specific IDs
+	if roleID == "nonexistent-role" {
+		w.WriteHeader(http.StatusNotFound)
+		json.NewEncoder(w).Encode(map[string]string{
+			"message": "Custom role not found",
+			"code":    "NOT_FOUND",
+		})
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"id":        roleID,
+		"name":      "Test Custom Role", // Use consistent name with CREATE
+		"tenant_id": env.TenantID,
+		"permissions": []map[string]interface{}{
+			{
+				"id":    "pos.payment.create",
+				"alias": "Create Payment",
+				// No attributes - consistent with CREATE when none provided
+			},
+		},
+		"created_at": "2025-09-28T15:30:00Z", // Use consistent timestamp
+		"updated_at": "2025-09-28T15:30:00Z",
+	})
+}
+
+// handleUpdateCustomRole handles PUT /custom-roles/{id}
+func (env *TestEnvironment) handleUpdateCustomRole(w http.ResponseWriter, r *http.Request, roleID string) {
+	// Simulate not found for specific IDs
+	if roleID == "nonexistent-role" {
+		w.WriteHeader(http.StatusNotFound)
+		json.NewEncoder(w).Encode(map[string]string{
+			"message": "Custom role not found",
+			"code":    "NOT_FOUND",
+		})
+		return
+	}
+
+	var req map[string]interface{}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{
+			"message": "Invalid JSON",
+			"code":    "VALIDATION_ERROR",
+		})
+		return
+	}
+
+	// Validate permissions if provided
+	if permissions, ok := req["permissions"].([]interface{}); ok {
+		if err := env.validatePermissions(permissions); err != nil {
+			w.WriteHeader(http.StatusUnprocessableEntity)
+			json.NewEncoder(w).Encode(err)
+			return
+		}
+		req["permissions"] = env.processPermissions(permissions)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"id":          roleID,
+		"name":        req["name"],
+		"tenant_id":   env.TenantID,
+		"permissions": req["permissions"],
+		"created_at":  "2025-09-28T10:30:00Z",
+		"updated_at":  "2025-09-28T15:45:00Z",
+	})
+}
+
+// handleDeleteCustomRole handles DELETE /custom-roles/{id}
+func (env *TestEnvironment) handleDeleteCustomRole(w http.ResponseWriter, r *http.Request, roleID string) {
+	// Simulate not found for specific IDs
+	if roleID == "nonexistent-role" {
+		w.WriteHeader(http.StatusNotFound)
+		json.NewEncoder(w).Encode(map[string]string{
+			"message": "Custom role not found",
+			"code":    "NOT_FOUND",
+		})
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// validatePermissions validates permission patterns and limits
+func (env *TestEnvironment) validatePermissions(permissions []interface{}) *ErrorResponse {
+	if len(permissions) > 500 {
+		return &ErrorResponse{
+			Message: "Too many permissions",
+			Code:    "VALIDATION_ERROR",
+			Details: []ValidationError{
+				{
+					Field:   "permissions",
+					Message: "Maximum 500 permissions allowed per role",
+					Code:    "LIMIT_EXCEEDED",
+				},
+			},
+		}
+	}
+
+	posCount := 0
+	generalCount := 0
+
+	for i, perm := range permissions {
+		permMap, ok := perm.(map[string]interface{})
+		if !ok {
+			return &ErrorResponse{
+				Message: "Invalid permission format",
+				Code:    "VALIDATION_ERROR",
+				Details: []ValidationError{
+					{
+						Field:   "permissions",
+						Message: "Permission must be an object",
+						Code:    "INVALID_FORMAT",
+					},
+				},
+			}
+		}
+
+		permId, ok := permMap["id"].(string)
+		if !ok || permId == "" {
+			return &ErrorResponse{
+				Message: "Validation failed",
+				Code:    "VALIDATION_ERROR",
+				Details: []ValidationError{
+					{
+						Field:   "permissions[" + string(rune(i)) + "].id",
+						Message: "Permission ID is required",
+						Code:    "REQUIRED_FIELD",
+					},
+				},
+			}
+		}
+
+		// Validate permission ID pattern
+		if !env.isValidPermissionPattern(permId) {
+			return &ErrorResponse{
+				Message: "Invalid permission ID format",
+				Code:    "VALIDATION_ERROR",
+				Details: []ValidationError{
+					{
+						Field:   "permissions[" + string(rune(i)) + "].id",
+						Message: "Permission ID must follow pattern: {systemPrefix}.{resource}.{action}",
+						Code:    "INVALID_PATTERN",
+					},
+				},
+			}
+		}
+
+		// Count POS vs general permissions
+		if strings.HasPrefix(permId, "pos.") {
+			posCount++
+		} else {
+			generalCount++
+		}
+
+		// Validate attributes if present
+		if attrs, ok := permMap["attributes"].(map[string]interface{}); ok {
+			if err := env.validateAttributes(attrs); err != nil {
+				return err
+			}
+		}
+	}
+
+	// Check permission limits
+	if posCount > 500 {
+		return &ErrorResponse{
+			Message: "Too many POS permissions",
+			Code:    "VALIDATION_ERROR",
+			Details: []ValidationError{
+				{
+					Field:   "permissions",
+					Message: "Maximum 500 POS permissions allowed per role",
+					Code:    "LIMIT_EXCEEDED",
+				},
+			},
+		}
+	}
+
+	if generalCount > 100 {
+		return &ErrorResponse{
+			Message: "Too many general permissions",
+			Code:    "VALIDATION_ERROR",
+			Details: []ValidationError{
+				{
+					Field:   "permissions",
+					Message: "Maximum 100 general (non-POS) permissions allowed per role",
+					Code:    "LIMIT_EXCEEDED",
+				},
+			},
+		}
+	}
+
+	return nil
+}
+
+// isValidPermissionPattern validates permission ID pattern
+func (env *TestEnvironment) isValidPermissionPattern(permId string) bool {
+	// Pattern: ^[a-z][-a-z]{2}\.[a-z][-a-z]{1,15}\.[a-z][-a-z]{1,15}$
+	parts := strings.Split(permId, ".")
+	if len(parts) != 3 {
+		return false
+	}
+
+	// Validate system prefix (3 chars)
+	systemPrefix := parts[0]
+	if len(systemPrefix) != 3 || !env.isValidPatternPart(systemPrefix) {
+		return false
+	}
+
+	// Validate resource (2-16 chars)
+	resource := parts[1]
+	if len(resource) < 2 || len(resource) > 16 || !env.isValidPatternPart(resource) {
+		return false
+	}
+
+	// Validate action (2-16 chars)
+	action := parts[2]
+	if len(action) < 2 || len(action) > 16 || !env.isValidPatternPart(action) {
+		return false
+	}
+
+	return true
+}
+
+// isValidPatternPart validates individual part of permission pattern
+func (env *TestEnvironment) isValidPatternPart(part string) bool {
+	for i, char := range part {
+		if i == 0 {
+			// First character must be a-z
+			if char < 'a' || char > 'z' {
+				return false
+			}
+		} else {
+			// Other characters can be a-z or hyphen
+			if (char < 'a' || char > 'z') && char != '-' {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+// validateAttributes validates attribute constraints
+func (env *TestEnvironment) validateAttributes(attrs map[string]interface{}) *ErrorResponse {
+	if len(attrs) > 10 {
+		return &ErrorResponse{
+			Message: "Too many attributes",
+			Code:    "VALIDATION_ERROR",
+			Details: []ValidationError{
+				{
+					Field:   "attributes",
+					Message: "Maximum 10 attributes allowed per permission",
+					Code:    "LIMIT_EXCEEDED",
+				},
+			},
+		}
+	}
+
+	for key, value := range attrs {
+		if len(key) > 40 {
+			return &ErrorResponse{
+				Message: "Attribute key too long",
+				Code:    "VALIDATION_ERROR",
+				Details: []ValidationError{
+					{
+						Field:   "attributes." + key,
+						Message: "Attribute key must be 40 characters or less",
+						Code:    "LENGTH_EXCEEDED",
+					},
+				},
+			}
+		}
+
+		if valueStr, ok := value.(string); ok {
+			if len(valueStr) > 256 {
+				return &ErrorResponse{
+					Message: "Attribute value too long",
+					Code:    "VALIDATION_ERROR",
+					Details: []ValidationError{
+						{
+							Field:   "attributes." + key,
+							Message: "Attribute value must be 256 characters or less",
+							Code:    "LENGTH_EXCEEDED",
+						},
+					},
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+// processPermissions adds computed fields like alias to permissions
+func (env *TestEnvironment) processPermissions(permissions []interface{}) []map[string]interface{} {
+	processed := make([]map[string]interface{}, len(permissions))
+
+	for i, perm := range permissions {
+		permMap := perm.(map[string]interface{})
+		processedPerm := map[string]interface{}{
+			"id":    permMap["id"],
+			"alias": env.generateAlias(permMap["id"].(string)),
+		}
+
+		// Only include attributes if they were provided in the request
+		if attrs, ok := permMap["attributes"]; ok && attrs != nil {
+			processedPerm["attributes"] = attrs
+		}
+
+		processed[i] = processedPerm
+	}
+
+	return processed
+}
+
+// generateAlias generates a human-readable alias for a permission ID
+func (env *TestEnvironment) generateAlias(permId string) string {
+	parts := strings.Split(permId, ".")
+	if len(parts) != 3 {
+		return permId
+	}
+
+	// Convert to title case
+	resource := strings.Title(parts[1])
+	action := strings.Title(parts[2])
+
+	return action + " " + resource
+}
+
+// ValidateMockServerReady ensures the mock server is fully operational before running tests
+func (env *TestEnvironment) ValidateMockServerReady(t *testing.T) {
+	if env.MockServer == nil {
+		t.Fatal("Mock server not initialized")
+	}
+
+	// Test OAuth2 endpoint to ensure it's responsive
+	resp, err := http.Post(env.BaseURL+"/oauth2/token", "application/x-www-form-urlencoded",
+		strings.NewReader("grant_type=client_credentials&client_id=test&client_secret=test"))
+	if err != nil {
+		t.Fatalf("Mock server OAuth2 endpoint not responsive: %v", err)
+	}
+	resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("Mock server OAuth2 endpoint returned unexpected status: %d", resp.StatusCode)
+	}
+
+	t.Logf("Mock server validated and ready at %s", env.BaseURL)
 }
 
 // SimulateError configures the mock server to return specific error responses
