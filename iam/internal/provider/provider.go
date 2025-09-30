@@ -20,6 +20,7 @@ import (
 
 	"github.com/extenda/hiiretail-terraform-providers/iam/internal/provider/resource_iam_custom_role"
 	"github.com/extenda/hiiretail-terraform-providers/iam/internal/provider/resource_iam_group"
+	"github.com/extenda/hiiretail-terraform-providers/iam/internal/provider/resource_iam_role_binding"
 )
 
 // Ensure HiiRetailIamProvider satisfies various provider interfaces.
@@ -184,6 +185,8 @@ func (p *HiiRetailIamProvider) Resources(ctx context.Context) []func() resource.
 		resource_iam_group.NewIamGroupResource,
 		// T001: Register Custom Role resource with provider
 		resource_iam_custom_role.NewIamCustomRoleResource,
+		// T014: Register Role Binding resource with provider
+		resource_iam_role_binding.NewIamRoleBindingResource,
 	}
 }
 
