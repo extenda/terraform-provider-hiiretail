@@ -1,0 +1,13 @@
+# Legacy provider configuration (pre-0.13 syntax)
+providers {
+  dockerimage = "/usr/local/bin/terraform-plugins/terraform-provider-docker-image"
+  localfile = "/usr/local/bin/terraform-plugins/terraform-provider-localfile"
+}
+
+# Modern provider installation configuration (0.13+ syntax)
+provider_installation {
+  dev_overrides {
+    "extenda/hiiretail-iam" = "/Users/shayne/repos/clients/extenda/hiiretail-terraform-providers/iam"
+  }
+  direct {}
+}
