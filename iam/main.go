@@ -23,7 +23,7 @@ func main() {
 	flag.Parse()
 
 	opts := providerserver.ServeOpts{
-		Address: "registry.terraform.io/extenda/hiiretail_iam",
+		Address: "registry.terraform.io/extenda/hiiretail-iam",
 		Debug:   debug,
 	}
 
