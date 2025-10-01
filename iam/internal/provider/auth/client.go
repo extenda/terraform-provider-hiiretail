@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 	"sync"
 	"time"
 
@@ -136,7 +137,10 @@ func (c *AuthClient) initializeOAuth2Config() error {
 		ClientSecret: c.config.ClientSecret,
 		TokenURL:     tokenURL,
 		Scopes:       c.config.Scopes,
-		AuthStyle:    oauth2.AuthStyleInParams, // Default to form parameters
+		AuthStyle:    oauth2.AuthStyleInHeader, // Use Basic authentication in header
+		EndpointParams: url.Values{
+			"audience": {"https://hiiretail.com"}, // Required audience parameter
+		},
 	}
 
 	// Create token source with custom HTTP client
