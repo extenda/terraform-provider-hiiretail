@@ -1,4 +1,3 @@
-package main
 // OAuth2 Demo - Run with: go run demo/oauth2_demo.go
 package main
 
