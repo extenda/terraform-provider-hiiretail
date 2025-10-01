@@ -48,11 +48,40 @@ fmt:
 	go fmt ./...
 	@echo "✅ Code formatted"
 
-# Lint Go code
+# Lint Go code with security focus
 lint:
-	@echo "Linting Go code..."
-	go vet ./...
+	@echo "Linting Go code with security checks..."
+	@if command -v golangci-lint >/dev/null 2>&1; then \
+		golangci-lint run; \
+	else \
+		echo "⚠️  golangci-lint not found, falling back to basic linting"; \
+		go vet ./...; \
+	fi
 	@echo "✅ Code linted"
+
+# Security audit for OAuth2 credential handling
+security-audit:
+	@echo "Running security audit for OAuth2 implementation..."
+	@if command -v golangci-lint >/dev/null 2>&1; then \
+		golangci-lint run --enable gosec --disable-all; \
+	else \
+		echo "⚠️  golangci-lint not found, install it for security auditing"; \
+		echo "Install: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b \$$(go env GOPATH)/bin v1.54.2"; \
+	fi
+	@echo "✅ Security audit complete"
+
+# Install golangci-lint for enhanced linting
+install-lint:
+	@echo "Installing golangci-lint..."
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $$(go env GOPATH)/bin v1.54.2
+	@echo "✅ golangci-lint installed"
+
+# Setup OAuth2 security git hooks
+setup-security-hooks:
+	@echo "Setting up OAuth2 security git hooks..."
+	git config core.hooksPath .githooks
+	@echo "✅ Security git hooks enabled"
+	@echo "   Pre-commit hook will now check for credential exposure"
 
 # Clean up build artifacts
 clean:
@@ -114,7 +143,10 @@ help:
 	@echo "  test-unit       Run unit tests only"
 	@echo "  test-acceptance Run acceptance tests only"
 	@echo "  fmt             Format Go code"
-	@echo "  lint            Lint Go code"
+	@echo "  lint            Lint Go code with security checks"
+	@echo "  security-audit  Run security audit for OAuth2 credential handling"
+	@echo "  install-lint    Install golangci-lint for enhanced linting"
+	@echo "  setup-security-hooks Setup git hooks for credential exposure detection"
 	@echo "  clean           Clean up build artifacts"
 	@echo "  dev-override    Show development override configuration"
 	@echo "  deps            Download and tidy dependencies"

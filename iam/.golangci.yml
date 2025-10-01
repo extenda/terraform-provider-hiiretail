@@ -1,0 +1,278 @@
+# GoLangCI-Lint configuration for HiiRetail IAM Terraform Provider
+# Focus on security, OAuth2 credential handling, and code quality
+
+run:
+  timeout: 5m
+  tests: true
+  build-tags:
+    - integration
+
+output:
+  format: colored-line-number
+  print-issued-lines: true
+  print-linter-name: true
+
+linters-settings:
+  govet:
+    check-shadowing: true
+    enable-all: true
+  
+  gosec:
+    # Security-focused rules for OAuth2 credential handling
+    includes:
+      - G101  # Look for hard coded credentials
+      - G102  # Bind to all interfaces
+      - G103  # Audit the use of unsafe block
+      - G104  # Audit errors not checked
+      - G106  # Audit the use of ssh.InsecureIgnoreHostKey
+      - G107  # Url provided to HTTP request as taint input
+      - G108  # Profiling endpoint automatically exposed on /debug/pprof
+      - G109  # Potential Integer overflow made by strconv.Atoi result conversion to int16/32
+      - G110  # Potential DoS vulnerability via decompression bomb
+      - G201  # SQL query construction using format string
+      - G202  # SQL query construction using string concatenation
+      - G203  # Use of unescaped data in HTML templates
+      - G204  # Audit use of command execution
+      - G301  # Poor file permissions used when creating a directory
+      - G302  # Poor file permissions used with chmod
+      - G303  # Creating tempfile using a predictable path
+      - G304  # File path provided as taint input
+      - G305  # File traversal when extracting zip/tar archive
+      - G306  # Poor file permissions used when writing to a new file
+      - G307  # Deferring a method which returns an error
+      - G401  # Detect the usage of DES, RC4, MD5 or SHA1
+      - G402  # Look for bad TLS connection settings
+      - G403  # Ensure minimum RSA key length of 2048 bits
+      - G404  # Insecure random number source (rand)
+      - G501  # Import blocklist: crypto/md5
+      - G502  # Import blocklist: crypto/des
+      - G503  # Import blocklist: crypto/rc4
+      - G504  # Import blocklist: net/http/cgi
+      - G505  # Import blocklist: crypto/sha1
+      - G601  # Implicit memory aliasing of items from a range statement
+    config:
+      G101:
+        # Enhanced credential detection patterns for OAuth2
+        pattern: (?i)(client_secret|access_token|refresh_token|bearer_token|api_key|private_key|password|pwd|secret|token)
+        ignore_entropy: false
+        entropy_threshold: "80.0"
+        per_char_threshold: "3.0"
+        truncate: "32"
+      G104:
+        # Audit unchecked errors - critical for OAuth2 operations
+        fmt: true
+  
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - style
+      - performance
+      - experimental
+    disabled-checks:
+      - dupImport # https://github.com/go-critic/go-critic/issues/845
+      - ifElseChain
+      - octalLiteral
+      - whyNoLint
+      - wrapperFunc
+      - hugeParam # TODO: enable this check
+  
+  errcheck:
+    # Check for unchecked errors in OAuth2 operations
+    check-type-assertions: true
+    check-blank: true
+    exclude-functions:
+      - io/ioutil.ReadFile
+      - io.Copy(*bytes.Buffer)
+      - io.Copy(os.Stdout)
+  
+  gocyclo:
+    min-complexity: 15
+  
+  misspell:
+    locale: US
+  
+  unparam:
+    check-exported: false
+  
+  unused:
+    check-exported: false
+  
+  revive:
+    rules:
+      # Security-focused rules
+      - name: exported
+        severity: warning
+        disabled: false
+        arguments:
+          - "checkPrivateReceivers"
+          - "sayRepetitiveInsteadOfStutters"
+      - name: package-comments
+        severity: warning
+        disabled: false
+      - name: blank-imports
+        severity: warning
+        disabled: false
+      - name: context-as-argument
+        severity: warning
+        disabled: false
+      - name: context-keys-type
+        severity: warning
+        disabled: false
+      - name: time-naming
+        severity: warning
+        disabled: false
+      - name: var-declaration
+        severity: warning
+        disabled: false
+      - name: unexported-return
+        severity: warning
+        disabled: false
+      - name: errorf
+        severity: warning
+        disabled: false
+      - name: empty-block
+        severity: warning
+        disabled: false
+      - name: superfluous-else
+        severity: warning
+        disabled: false
+      - name: confusing-naming
+        severity: warning
+        disabled: false
+      - name: get-return
+        severity: warning
+        disabled: false
+      - name: modify-return
+        severity: warning
+        disabled: false
+      - name: deep-exit
+        severity: warning
+        disabled: false
+      - name: unused-parameter
+        severity: warning
+        disabled: false
+
+linters:
+  enable:
+    - errcheck      # Checking for unchecked errors
+    - gosimple      # Simplify code
+    - govet         # Vet examines Go source code
+    - ineffassign   # Detects ineffectual assignments
+    - staticcheck   # Advanced Go linter
+    - typecheck     # Type-checks Go code
+    - unused        # Checks for unused constants, variables, functions and types
+    - gosec         # Security-focused linter (critical for OAuth2)
+    - gocritic      # Provides diagnostics that check for bugs, performance and style issues
+    - revive        # Fast, configurable, extensible, flexible, and beautiful linter for Go
+    - misspell      # Finds commonly misspelled English words in comments
+    - unparam       # Reports unused function parameters
+    - gocyclo       # Computes and checks the cyclomatic complexity of functions
+    - bodyclose     # Checks whether HTTP response body is closed successfully
+    - rowserrcheck  # Checks whether Err of rows is checked successfully
+    - nilerr        # Finds the code that returns nil even if it checks that the error is not nil
+    - exportloopref # Checks for pointers to enclosing loop variables
+    - gomodguard    # Allow and block list linter for direct Go module dependencies
+    - godot         # Check if comments end in a period
+    - gofmt         # Gofmt checks whether code was gofmt-ed
+    - goimports     # In addition to fixing imports, goimports also formats your code in the same style as gofmt
+    - goconst       # Finds repeated strings that could be replaced by a constant
+    - unconvert     # Remove unnecessary type conversions
+    - wastedassign  # wastedassign finds wasted assignment statements
+    - whitespace    # Tool for detection of leading and trailing whitespace
+  
+  disable:
+    - dupl          # Tool for code clone detection
+    - funlen        # Tool for detection of long functions
+    - gochecknoglobals  # Check that no global variables exist
+    - gochecknoinits    # Checks that no init functions are present in Go code
+    - gocognit      # Computes and checks the cognitive complexity of functions
+    - godox         # Tool for detection of FIXME, TODO and other comment keywords
+    - gomnd         # An analyzer to detect magic numbers
+    - lll           # Reports long lines
+    - maligned      # Tool to detect Go structs that would take less memory if their fields were sorted
+    - nakedret      # Finds naked returns in functions greater than a specified function length
+    - nestif        # Reports deeply nested if statements
+    - prealloc      # Finds slice declarations that could potentially be preallocated
+    - scopelint     # Scopelint checks for unpinned variables in go programs
+    - testpackage   # Makes you use a separate _test package
+    - wsl           # Whitespace Linter - Forces you to use empty lines!
+
+issues:
+  # List of regexps of issue texts to exclude, empty list by default.
+  exclude:
+    - "Error return value of .((os\\.)?std(out|err)\\..*|.*Close|.*Flush|os\\.Remove(All)?|.*printf?|os\\.(Un)?Setenv). is not checked"
+    
+  # Excluding configuration per-path, per-linter, per-text and per-source
+  exclude-rules:
+    # Exclude some linters from running on tests files.
+    - path: _test\.go
+      linters:
+        - gomnd
+        - goconst
+        - gosec
+    
+    # Exclude gosec G101 (credential detection) for test files with mock credentials
+    - path: _test\.go
+      text: "G101: Potential hardcoded credentials"
+      linters:
+        - gosec
+    
+    # Exclude specific gosec rules for acceptance tests
+    - path: acceptance_tests/
+      linters:
+        - gosec
+      text: "G101: Potential hardcoded credentials"
+    
+    # Allow long lines in generated files
+    - path: "_gen\\.go$"
+      linters:
+        - lll
+        - gocritic
+    
+    # Disable some linters for main.go
+    - path: main\.go
+      linters:
+        - gocritic
+        - errcheck
+
+  # Set to 0 to disable limit
+  max-issues-per-linter: 0
+  max-same-issues: 0
+  
+  # Show only new issues created after git revision
+  new: false
+  
+  # Show issues in any part of update files (requires new to be true)
+  new-from-rev: ""
+  
+  # Show only new issues created in git patch with set file path.
+  new-from-patch: ""
+
+severity:
+  # Default value is empty string.
+  # Set the default severity for issues. If severity rules are defined and the issues
+  # do not match or no severity is provided to the rule this will be the default
+  # severity applied. Severities should match the supported severity names of the
+  # selected out format.
+  # - Code climate: https://docs.codeclimate.com/docs/issues#issue-severity
+  # - Checkstyle: https://checkstyle.sourceforge.io/property_types.html#severity
+  # - Github: https://help.github.com/en/actions/reference/workflow-commands-for-github-actions#setting-an-error-message
+  default-severity: error
+  
+  # The default value is false.
+  # If set to true severity-rules regular expressions become case sensitive.
+  case-sensitive: false
+  
+  # Default value is empty list.
+  # When a list of severity rules are provided, severity information will be added to lint
+  # issues. Severity rules have the same filtering capability as exclude rules except you
+  # are allowed to specify one matcher per severity rule.
+  rules:
+    - linters:
+        - gosec
+      severity: error
+    - linters:
+        - errcheck
+      severity: error
+    - text: "G101: Potential hardcoded credentials"
+      severity: error
