@@ -330,6 +330,12 @@ func (suite *OAuth2IntegrationTestSuite) TestConcurrentOAuth2Operations() {
 				return
 			}
 
+			// Use token to verify it's valid
+			if token == nil {
+				results[index] = fmt.Errorf("received nil token")
+				return
+			}
+
 			// Use token for API call
 			httpClient, err := suite.authClient.HTTPClient(ctx)
 			if err != nil {

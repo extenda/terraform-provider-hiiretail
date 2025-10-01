@@ -15,7 +15,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/clientcredentials"
 )
 
 // TestAuthClient_TokenAcquisition tests OAuth2 client credentials token acquisition
@@ -649,78 +648,7 @@ func TestAuthClient_HTTPClientIntegration(t *testing.T) {
 	})
 }
 
-// Mock structures and helper functions for testing
-
-type AuthClientConfig struct {
-	TenantID     string
-	ClientID     string
-	ClientSecret string
-	BaseURL      string
-	TokenURL     string
-	Scopes       []string
-	Timeout      time.Duration
-	MaxRetries   int
-}
-
-type AuthClient struct {
-	config      *AuthClientConfig
-	oauth2cfg   *clientcredentials.Config
-	tokenSource oauth2.TokenSource
-	httpClient  *http.Client
-	mutex       sync.RWMutex
-}
-
-type AuthErrorType int
-
-const (
-	AuthErrorUnknown AuthErrorType = iota
-	AuthErrorConfiguration
-	AuthErrorDiscovery
-	AuthErrorCredentials
-	AuthErrorNetwork
-	AuthErrorServerError
-	AuthErrorRateLimit
-	AuthErrorTokenExpired
-)
-
-type AuthError struct {
-	Type       AuthErrorType
-	Message    string
-	Underlying error
-	Retryable  bool
-	RetryAfter time.Duration
-}
-
-func (e *AuthError) Error() string {
-	return e.Message
-}
-
-// Mock implementations for testing (these will be replaced by actual implementations)
-
-func NewAuthClient(config *AuthClientConfig) (*AuthClient, error) {
-	// This is a mock implementation for testing
-	return &AuthClient{config: config}, nil
-}
-
-func (c *AuthClient) GetToken(ctx context.Context) (*oauth2.Token, error) {
-	// This is a mock implementation for testing
-	return nil, fmt.Errorf("not implemented - this is a test mock")
-}
-
-func (c *AuthClient) ValidateToken(ctx context.Context, token *oauth2.Token) (bool, error) {
-	// Simple validation for testing
-	return token != nil && token.Valid(), nil
-}
-
-func (c *AuthClient) HTTPClient(ctx context.Context) (*http.Client, error) {
-	// This is a mock implementation for testing
-	return &http.Client{}, nil
-}
-
-func (c *AuthClient) HTTPClientWithRetry(ctx context.Context) (*http.Client, error) {
-	// This is a mock implementation for testing
-	return &http.Client{}, nil
-}
+// Helper functions for testing
 
 // Helper function to parse form data from request
 func parseForm(t *testing.T, r *http.Request) url.Values {

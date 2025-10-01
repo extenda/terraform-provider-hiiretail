@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"reflect"
 	"strings"
 	"time"
 
@@ -14,11 +15,48 @@ import (
 )
 
 // APIClient represents the configuration for making API calls
-// This matches the APIClient from the provider package
+// This mirrors the APIClient from the provider package
 type APIClient struct {
 	BaseURL    string
 	TenantID   string
 	HTTPClient *http.Client
+}
+
+// extractAPIClientFields uses reflection to extract APIClient fields from provider data
+func extractAPIClientFields(providerData interface{}) *APIClient {
+	if providerData == nil {
+		return nil
+	}
+
+	v := reflect.ValueOf(providerData)
+	if v.Kind() == reflect.Ptr {
+		v = v.Elem()
+	}
+
+	if v.Kind() != reflect.Struct {
+		return nil
+	}
+
+	// Extract the fields we need
+	baseURLField := v.FieldByName("BaseURL")
+	tenantIDField := v.FieldByName("TenantID")
+	httpClientField := v.FieldByName("HTTPClient")
+
+	if !baseURLField.IsValid() || !tenantIDField.IsValid() || !httpClientField.IsValid() {
+		return nil
+	}
+
+	if baseURLField.Type().Kind() != reflect.String ||
+		tenantIDField.Type().Kind() != reflect.String ||
+		httpClientField.Type() != reflect.TypeOf((*http.Client)(nil)) {
+		return nil
+	}
+
+	return &APIClient{
+		BaseURL:    baseURLField.String(),
+		TenantID:   tenantIDField.String(),
+		HTTPClient: httpClientField.Interface().(*http.Client),
+	}
 }
 
 // Ensure provider defined types fully satisfy framework interfaces.
@@ -72,10 +110,10 @@ func (r *IamGroupResource) Configure(ctx context.Context, req resource.Configure
 		return
 	}
 
-	// T029: Integrate OIDC authentication for Group API calls
-	// Extract the API client from provider data
-	client, ok := req.ProviderData.(*APIClient)
-	if !ok {
+	// T029: Integrate OAuth2 authentication for Group API calls
+	// Extract the API client from provider data using reflection
+	client := extractAPIClientFields(req.ProviderData)
+	if client == nil {
 		resp.Diagnostics.AddError(
 			"Unexpected Resource Configure Type",
 			fmt.Sprintf("Expected *APIClient, got: %T. Please report this issue to the provider developers.", req.ProviderData),
