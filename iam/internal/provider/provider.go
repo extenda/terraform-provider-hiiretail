@@ -4,20 +4,18 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"net/url"
 	"os"
+	"strconv"
+	"strings"
 	"time"
 
-	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
-	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
-	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
-	"github.com/hashicorp/terraform-plugin-framework/types"
-	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/clientcredentials"
 
+	"github.com/extenda/hiiretail-terraform-providers/iam/internal/provider/auth"
+	"github.com/extenda/hiiretail-terraform-providers/iam/internal/provider/provider_hiiretail_iam"
 	"github.com/extenda/hiiretail-terraform-providers/iam/internal/provider/resource_iam_custom_role"
 	"github.com/extenda/hiiretail-terraform-providers/iam/internal/provider/resource_iam_group"
 	"github.com/extenda/hiiretail-terraform-providers/iam/internal/provider/resource_iam_role_binding"
@@ -32,12 +30,7 @@ type HiiRetailIamProvider struct {
 }
 
 // HiiRetailIamProviderModel describes the provider data model.
-type HiiRetailIamProviderModel struct {
-	TenantId     types.String `tfsdk:"tenant_id"`
-	BaseUrl      types.String `tfsdk:"base_url"`
-	ClientId     types.String `tfsdk:"client_id"`
-	ClientSecret types.String `tfsdk:"client_secret"`
-}
+type HiiRetailIamProviderModel = provider_hiiretail_iam.HiiretailIamModel
 
 func (p *HiiRetailIamProvider) Metadata(ctx context.Context, req provider.MetadataRequest, resp *provider.MetadataResponse) {
 	resp.TypeName = "hiiretail-iam"
@@ -45,31 +38,7 @@ func (p *HiiRetailIamProvider) Metadata(ctx context.Context, req provider.Metada
 }
 
 func (p *HiiRetailIamProvider) Schema(ctx context.Context, req provider.SchemaRequest, resp *provider.SchemaResponse) {
-	resp.Schema = schema.Schema{
-		Description: "Terraform provider for Hii Retail IAM API",
-		Attributes: map[string]schema.Attribute{
-			"tenant_id": schema.StringAttribute{
-				Description: "Tenant ID to use for all IAM API requests. Can be set via HIIRETAIL_TENANT_ID environment variable.",
-				Optional:    true,
-			},
-			"base_url": schema.StringAttribute{
-				Description: "Base URL of the IAM API. Defaults to https://iam-api.retailsvc-test.com. Can be set via HIIRETAIL_BASE_URL environment variable.",
-				Optional:    true,
-				Validators: []validator.String{
-					stringvalidator.LengthAtLeast(1),
-				},
-			},
-			"client_id": schema.StringAttribute{
-				Description: "OIDC client ID for IAM API authentication. Can be set via HIIRETAIL_CLIENT_ID environment variable.",
-				Optional:    true,
-			},
-			"client_secret": schema.StringAttribute{
-				Description: "OIDC client secret for IAM API authentication. Can be set via HIIRETAIL_CLIENT_SECRET environment variable.",
-				Optional:    true,
-				Sensitive:   true,
-			},
-		},
-	}
+	resp.Schema = provider_hiiretail_iam.HiiretailIamProviderSchema(ctx)
 }
 
 func (p *HiiRetailIamProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
@@ -81,98 +50,71 @@ func (p *HiiRetailIamProvider) Configure(ctx context.Context, req provider.Confi
 		return
 	}
 
-	// Get configuration values from attributes or environment variables
-	var tenantId, baseUrl, clientId, clientSecret string
+	// Build OAuth2 configuration from provider data and environment variables
+	authConfig, diags := buildAuthConfig(ctx, &data)
+	resp.Diagnostics.Append(diags...)
 
-	// Tenant ID
-	if !data.TenantId.IsNull() && !data.TenantId.IsUnknown() {
-		tenantId = data.TenantId.ValueString()
-	} else {
-		tenantId = os.Getenv("HIIRETAIL_TENANT_ID")
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
-	// Base URL
-	if !data.BaseUrl.IsNull() && !data.BaseUrl.IsUnknown() {
-		baseUrl = data.BaseUrl.ValueString()
-	} else {
-		baseUrl = os.Getenv("HIIRETAIL_BASE_URL")
-		if baseUrl == "" {
-			baseUrl = "https://iam-api.retailsvc-test.com"
+	// Validate configuration using the comprehensive validation system
+	validationResult := auth.ValidateAuthConfig(authConfig, auth.DefaultValidationRules())
+	if !validationResult.Valid {
+		for _, err := range validationResult.Errors {
+			resp.Diagnostics.AddError(
+				fmt.Sprintf("Configuration Error in %s", err.Field),
+				fmt.Sprintf("%s. %s", err.Message, err.Suggestion),
+			)
 		}
+		return
 	}
 
-	// Client ID
-	if !data.ClientId.IsNull() && !data.ClientId.IsUnknown() {
-		clientId = data.ClientId.ValueString()
-	} else {
-		clientId = os.Getenv("HIIRETAIL_CLIENT_ID")
+	// Add warnings for configuration issues
+	for _, warning := range validationResult.Warnings {
+		resp.Diagnostics.AddWarning(
+			fmt.Sprintf("Configuration Warning for %s", warning.Field),
+			fmt.Sprintf("%s. %s", warning.Message, warning.Suggestion),
+		)
 	}
 
-	// Client Secret
-	if !data.ClientSecret.IsNull() && !data.ClientSecret.IsUnknown() {
-		clientSecret = data.ClientSecret.ValueString()
-	} else {
-		clientSecret = os.Getenv("HIIRETAIL_CLIENT_SECRET")
-	}
-
-	// Validate base URL format
-	parsedURL, err := url.Parse(baseUrl)
-	if err != nil || parsedURL.Scheme == "" || parsedURL.Host == "" {
+	// Create OAuth2 authentication client
+	authClient, err := auth.NewAuthClient(authConfig)
+	if err != nil {
 		resp.Diagnostics.AddError(
-			"Invalid base_url",
-			fmt.Sprintf("The provided base_url is not a valid URL: %s", baseUrl),
+			"OAuth2 Authentication Setup Failed",
+			fmt.Sprintf("Failed to initialize OAuth2 authentication client: %s", err.Error()),
 		)
 		return
 	}
 
-	// Validate required fields
-	if tenantId == "" {
+	// Validate authentication by attempting to acquire a token
+	if _, err := authClient.GetToken(ctx); err != nil {
+		authClient.Close() // Clean up resources
 		resp.Diagnostics.AddError(
-			"Missing tenant_id",
-			"The tenant_id parameter is required. Set it in the provider configuration or via HIIRETAIL_TENANT_ID environment variable.",
+			"OAuth2 Authentication Failed",
+			fmt.Sprintf("Failed to authenticate with OAuth2 provider: %s", err.Error()),
 		)
 		return
 	}
 
-	if clientId == "" {
+	// Create authenticated HTTP client
+	httpClient, err := authClient.HTTPClientWithRetry(ctx)
+	if err != nil {
+		authClient.Close() // Clean up resources
 		resp.Diagnostics.AddError(
-			"Missing client_id",
-			"The client_id parameter is required for OIDC authentication. Set it in the provider configuration or via HIIRETAIL_CLIENT_ID environment variable.",
+			"HTTP Client Setup Failed",
+			fmt.Sprintf("Failed to create authenticated HTTP client: %s", err.Error()),
 		)
 		return
 	}
-
-	if clientSecret == "" {
-		resp.Diagnostics.AddError(
-			"Missing client_secret",
-			"The client_secret parameter is required for OIDC authentication. Set it in the provider configuration or via HIIRETAIL_CLIENT_SECRET environment variable.",
-		)
-		return
-	}
-
-	// Configure OIDC client credentials flow
-	config := &clientcredentials.Config{
-		ClientID:     clientId,
-		ClientSecret: clientSecret,
-		TokenURL:     fmt.Sprintf("%s/oauth2/token", baseUrl),
-	}
-
-	// Create HTTP client with OAuth2 configuration and shorter timeout for test environments
-	// Note: Token acquisition is lazy - happens on first API call, not during provider configuration
-	baseHTTPClient := &http.Client{
-		Timeout: 10 * time.Second, // Shorter timeout for tests
-	}
-
-	// Create OAuth2 context that won't be canceled when Terraform operations timeout
-	// Use background context to avoid context cancellation issues during token acquisition
-	oauthCtx := context.WithValue(context.Background(), oauth2.HTTPClient, baseHTTPClient)
-	httpClient := config.Client(oauthCtx)
 
 	// Create API client configuration
 	apiClient := &APIClient{
-		BaseURL:    baseUrl,
-		TenantID:   tenantId,
+		BaseURL:    resolveBaseURL(authConfig),
+		TenantID:   authConfig.TenantID,
 		HTTPClient: httpClient,
+		AuthClient: authClient,
 	}
 
 	resp.DataSourceData = apiClient
@@ -207,4 +149,126 @@ type APIClient struct {
 	BaseURL    string
 	TenantID   string
 	HTTPClient *http.Client
+	AuthClient *auth.AuthClient
+}
+
+// buildAuthConfig creates an AuthClientConfig from provider configuration and environment variables
+func buildAuthConfig(ctx context.Context, data *HiiRetailIamProviderModel) (*auth.AuthClientConfig, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
+	config := &auth.AuthClientConfig{}
+
+	// Get tenant ID from config or environment
+	if !data.TenantId.IsNull() && !data.TenantId.IsUnknown() {
+		config.TenantID = data.TenantId.ValueString()
+	} else {
+		config.TenantID = os.Getenv("HIIRETAIL_TENANT_ID")
+	}
+
+	// Get client ID from config or environment
+	if !data.ClientId.IsNull() && !data.ClientId.IsUnknown() {
+		config.ClientID = data.ClientId.ValueString()
+	} else {
+		config.ClientID = os.Getenv("HIIRETAIL_CLIENT_ID")
+	}
+
+	// Get client secret from config or environment
+	if !data.ClientSecret.IsNull() && !data.ClientSecret.IsUnknown() {
+		config.ClientSecret = data.ClientSecret.ValueString()
+	} else {
+		config.ClientSecret = os.Getenv("HIIRETAIL_CLIENT_SECRET")
+	}
+
+	// Get base URL from config or environment
+	if !data.BaseUrl.IsNull() && !data.BaseUrl.IsUnknown() {
+		config.BaseURL = data.BaseUrl.ValueString()
+	} else {
+		baseURL := os.Getenv("HIIRETAIL_BASE_URL")
+		if baseURL == "" {
+			baseURL = "https://auth.retailsvc.com" // Default OAuth2 discovery endpoint
+		}
+		config.BaseURL = baseURL
+	}
+
+	// Get token URL from config or environment (optional)
+	if !data.TokenUrl.IsNull() && !data.TokenUrl.IsUnknown() {
+		config.TokenURL = data.TokenUrl.ValueString()
+	} else {
+		config.TokenURL = os.Getenv("HIIRETAIL_TOKEN_URL")
+	}
+
+	// Get scopes from config or default
+	if !data.Scopes.IsNull() && !data.Scopes.IsUnknown() {
+		scopes := make([]string, 0, len(data.Scopes.Elements()))
+		diags.Append(data.Scopes.ElementsAs(ctx, &scopes, false)...)
+		config.Scopes = scopes
+	} else {
+		scopesEnv := os.Getenv("HIIRETAIL_SCOPES")
+		if scopesEnv != "" {
+			config.Scopes = strings.Split(scopesEnv, ",")
+		} else {
+			config.Scopes = []string{"iam:read", "iam:write"} // Default scopes
+		}
+	}
+
+	// Get timeout from config or environment
+	if !data.TimeoutSeconds.IsNull() && !data.TimeoutSeconds.IsUnknown() {
+		config.Timeout = time.Duration(data.TimeoutSeconds.ValueInt64()) * time.Second
+	} else {
+		timeoutEnv := os.Getenv("HIIRETAIL_TIMEOUT_SECONDS")
+		if timeoutEnv != "" {
+			if timeoutSeconds, err := strconv.Atoi(timeoutEnv); err == nil {
+				config.Timeout = time.Duration(timeoutSeconds) * time.Second
+			}
+		}
+		if config.Timeout == 0 {
+			config.Timeout = 30 * time.Second // Default timeout
+		}
+	}
+
+	// Get max retries from config or environment
+	if !data.MaxRetries.IsNull() && !data.MaxRetries.IsUnknown() {
+		config.MaxRetries = int(data.MaxRetries.ValueInt64())
+	} else {
+		retriesEnv := os.Getenv("HIIRETAIL_MAX_RETRIES")
+		if retriesEnv != "" {
+			if maxRetries, err := strconv.Atoi(retriesEnv); err == nil {
+				config.MaxRetries = maxRetries
+			}
+		}
+		if config.MaxRetries == 0 {
+			config.MaxRetries = 3 // Default max retries
+		}
+	}
+
+	// Get disable discovery from config or environment
+	if !data.DisableDiscovery.IsNull() && !data.DisableDiscovery.IsUnknown() {
+		config.DisableDiscovery = data.DisableDiscovery.ValueBool()
+	} else {
+		disableDiscoveryEnv := os.Getenv("HIIRETAIL_DISABLE_DISCOVERY")
+		config.DisableDiscovery = strings.ToLower(disableDiscoveryEnv) == "true"
+	}
+
+	// Get custom headers from config
+	if !data.CustomHeaders.IsNull() && !data.CustomHeaders.IsUnknown() {
+		headers := make(map[string]string)
+		diags.Append(data.CustomHeaders.ElementsAs(ctx, &headers, false)...)
+		config.CustomHeaders = headers
+	}
+
+	return config, diags
+}
+
+// resolveBaseURL determines the appropriate base URL for API calls
+func resolveBaseURL(config *auth.AuthClientConfig) string {
+	if config.BaseURL != "" {
+		// Convert OAuth2 discovery URL to API base URL
+		if strings.Contains(config.BaseURL, "auth.retailsvc.com") {
+			return "https://iam-api.retailsvc.com"
+		}
+		return config.BaseURL
+	}
+
+	// Default API base URL
+	return "https://iam-api.retailsvc.com"
 }
