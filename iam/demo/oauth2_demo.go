@@ -112,12 +112,12 @@ func main() {
 	// Acquire OAuth2 access token
 	fmt.Println("🎫 Acquiring OAuth2 Access Token...")
 	ctx := context.Background()
-	
+
 	token, err := authClient.GetToken(ctx)
 	if err != nil {
 		log.Fatalf("❌ Failed to acquire token: %v", err)
 	}
-	
+
 	fmt.Println("✅ SUCCESS! OAuth2 token acquired:")
 	fmt.Printf("   Token Type: %s\n", token.TokenType)
 	fmt.Printf("   Access Token: %s...\n", token.AccessToken[:25])
@@ -130,7 +130,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("❌ Failed to get cached token: %v", err)
 	}
-	
+
 	if token.AccessToken == token2.AccessToken {
 		fmt.Println("✅ Token retrieved from cache successfully!")
 	}
