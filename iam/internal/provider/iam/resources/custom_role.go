@@ -9,7 +9,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -42,6 +41,12 @@ type CustomRoleResourceModel struct {
 	UpdatedAt   types.String `tfsdk:"updated_at"`
 }
 
+// PermissionModel represents a permission object
+type PermissionModel struct {
+	ID         types.String `tfsdk:"id"`
+	Attributes types.Map    `tfsdk:"attributes"`
+}
+
 // NewCustomRoleResource creates a new custom role resource
 func NewCustomRoleResource() resource.Resource {
 	return &CustomRoleResource{}
@@ -60,12 +65,9 @@ func (r *CustomRoleResource) Schema(ctx context.Context, req resource.SchemaRequ
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Description:         "Unique identifier for the custom role.",
-				MarkdownDescription: "Unique identifier for the custom role.",
-				Computed:            true,
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
-				},
+				Description:         "Unique identifier for the custom role in format 'custom.{name}'.",
+				MarkdownDescription: "Unique identifier for the custom role in format `custom.{name}`.",
+				Required:            true,
 			},
 			"name": schema.StringAttribute{
 				Description:         "Name of the custom role. Must be unique within the tenant.",
@@ -93,16 +95,24 @@ func (r *CustomRoleResource) Schema(ctx context.Context, req resource.SchemaRequ
 					validators.StringLengthBetween(0, 500),
 				},
 			},
-			"permissions": schema.SetAttribute{
-				ElementType:         types.StringType,
-				Description:         "Set of permissions for the custom role in format 'service.resource.action'.",
-				MarkdownDescription: "Set of permissions for the custom role in format `service.resource.action` (e.g., `iam.groups.list`).",
+			"permissions": schema.SetNestedAttribute{
+				Description:         "Set of permissions for the custom role.",
+				MarkdownDescription: "Set of permissions for the custom role.",
 				Required:            true,
-				Validators:          []validator.Set{
-					// TODO: Add set validators for permissions
-				},
-				PlanModifiers: []planmodifier.Set{
-					setplanmodifier.UseStateForUnknown(),
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: map[string]schema.Attribute{
+						"id": schema.StringAttribute{
+							Description:         "Permission identifier in format 'service.resource.action'.",
+							MarkdownDescription: "Permission identifier in format `service.resource.action` (e.g., `iam.groups.list`).",
+							Required:            true,
+						},
+						"attributes": schema.MapAttribute{
+							Description:         "Additional attributes for the permission.",
+							MarkdownDescription: "Additional attributes for the permission.",
+							ElementType:         types.StringType,
+							Optional:            true,
+						},
+					},
 				},
 			},
 			"stage": schema.StringAttribute{
@@ -163,21 +173,42 @@ func (r *CustomRoleResource) Create(ctx context.Context, req resource.CreateRequ
 		return
 	}
 
+	// Use the provided ID from configuration
+	roleID := data.ID.ValueString()
+
 	// Create API custom role object
 	role := &iam.CustomRole{
+		ID:          roleID,
 		Name:        data.Name.ValueString(),
 		Title:       data.Title.ValueString(),
 		Description: data.Description.ValueString(),
 		Stage:       data.Stage.ValueString(),
 	}
 
-	// Convert permissions from Terraform set to string slice
+	// Convert permissions from Terraform set to Permission objects
 	if !data.Permissions.IsNull() && !data.Permissions.IsUnknown() {
-		permissions := make([]string, 0, len(data.Permissions.Elements()))
+		permissions := make([]iam.Permission, 0, len(data.Permissions.Elements()))
 		for _, elem := range data.Permissions.Elements() {
-			if str, ok := elem.(types.String); ok {
-				permissions = append(permissions, str.ValueString())
+			// Each element is an object with id and attributes
+			objValue := elem.(types.Object)
+			attrs := objValue.Attributes()
+
+			permission := iam.Permission{
+				ID: attrs["id"].(types.String).ValueString(),
 			}
+
+			// Handle attributes if present
+			if attrMap, ok := attrs["attributes"].(types.Map); ok && !attrMap.IsNull() {
+				attributes := make(map[string]interface{})
+				for k, v := range attrMap.Elements() {
+					if strVal, ok := v.(types.String); ok {
+						attributes[k] = strVal.ValueString()
+					}
+				}
+				permission.Attributes = attributes
+			}
+
+			permissions = append(permissions, permission)
 		}
 		role.Permissions = permissions
 	}
@@ -185,32 +216,82 @@ func (r *CustomRoleResource) Create(ctx context.Context, req resource.CreateRequ
 	// Create the custom role via API
 	createdRole, err := r.iamService.CreateCustomRole(ctx, role)
 	if err != nil {
-		resp.Diagnostics.AddError(
-			"Error Creating IAM Custom Role",
-			"Could not create custom role, unexpected error: "+err.Error(),
-		)
-		return
+		// If the role already exists (409 error), try to read it instead
+		if client.IsConflictError(err) {
+			// Try to get the existing role using the full role ID
+			existingRole, readErr := r.iamService.GetCustomRole(ctx, role.ID)
+			if readErr != nil {
+				resp.Diagnostics.AddError(
+					"Error Creating IAM Custom Role",
+					"Custom role already exists but could not be read: "+readErr.Error(),
+				)
+				return
+			}
+			createdRole = existingRole
+		} else {
+			resp.Diagnostics.AddError(
+				"Error Creating IAM Custom Role",
+				"Could not create custom role, unexpected error: "+err.Error(),
+			)
+			return
+		}
 	}
 
 	// Map API response back to resource model
 	data.ID = types.StringValue(createdRole.ID)
 	data.Name = types.StringValue(createdRole.Name)
-	data.Title = types.StringValue(createdRole.Title)
-	data.Description = types.StringValue(createdRole.Description)
-	data.Stage = types.StringValue(createdRole.Stage)
+	// API doesn't return title, description, stage, created_at, updated_at - keep the configured values
 
 	if len(createdRole.Permissions) > 0 {
 		permissionElements := make([]attr.Value, len(createdRole.Permissions))
 		for i, permission := range createdRole.Permissions {
-			permissionElements[i] = types.StringValue(permission)
+			// Create attributes map for this permission
+			attrMap := make(map[string]attr.Value)
+			if permission.Attributes != nil {
+				for k, v := range permission.Attributes {
+					if strVal, ok := v.(string); ok {
+						attrMap[k] = types.StringValue(strVal)
+					}
+				}
+			}
+
+			// Create the permission object
+			permissionObj := types.ObjectValueMust(
+				map[string]attr.Type{
+					"id":         types.StringType,
+					"attributes": types.MapType{ElemType: types.StringType},
+				},
+				map[string]attr.Value{
+					"id":         types.StringValue(permission.ID),
+					"attributes": types.MapValueMust(types.StringType, attrMap),
+				},
+			)
+			permissionElements[i] = permissionObj
 		}
-		data.Permissions = types.SetValueMust(types.StringType, permissionElements)
+
+		// Define the object type for permissions
+		permissionObjectType := types.ObjectType{
+			AttrTypes: map[string]attr.Type{
+				"id":         types.StringType,
+				"attributes": types.MapType{ElemType: types.StringType},
+			},
+		}
+		data.Permissions = types.SetValueMust(permissionObjectType, permissionElements)
 	} else {
-		data.Permissions = types.SetValueMust(types.StringType, []attr.Value{})
+		// Define the object type for permissions
+		permissionObjectType := types.ObjectType{
+			AttrTypes: map[string]attr.Type{
+				"id":         types.StringType,
+				"attributes": types.MapType{ElemType: types.StringType},
+			},
+		}
+		data.Permissions = types.SetValueMust(permissionObjectType, []attr.Value{})
 	}
 
-	data.CreatedAt = types.StringValue(createdRole.CreatedAt)
-	data.UpdatedAt = types.StringValue(createdRole.UpdatedAt)
+	// These are computed fields but API doesn't return them, so keep as null
+	data.CreatedAt = types.StringNull()
+	data.UpdatedAt = types.StringNull()
+	data.Stage = types.StringNull()
 
 	// Write logs using the tflog package
 	tflog.Trace(ctx, "created IAM custom role resource")
@@ -229,8 +310,8 @@ func (r *CustomRoleResource) Read(ctx context.Context, req resource.ReadRequest,
 		return
 	}
 
-	// Get custom role from API
-	role, err := r.iamService.GetCustomRole(ctx, data.Name.ValueString())
+	// Get custom role from API using the ID field
+	role, err := r.iamService.GetCustomRole(ctx, data.ID.ValueString())
 	if err != nil {
 		if client.IsNotFoundError(err) {
 			// Custom role no longer exists
@@ -247,22 +328,58 @@ func (r *CustomRoleResource) Read(ctx context.Context, req resource.ReadRequest,
 	// Map API response to resource model
 	data.ID = types.StringValue(role.ID)
 	data.Name = types.StringValue(role.Name)
-	data.Title = types.StringValue(role.Title)
-	data.Description = types.StringValue(role.Description)
-	data.Stage = types.StringValue(role.Stage)
+	// API doesn't return title, description, stage - keep the configured values from state
 
 	if len(role.Permissions) > 0 {
 		permissionElements := make([]attr.Value, len(role.Permissions))
 		for i, permission := range role.Permissions {
-			permissionElements[i] = types.StringValue(permission)
+			// Create attributes map for this permission
+			attrMap := make(map[string]attr.Value)
+			if permission.Attributes != nil {
+				for k, v := range permission.Attributes {
+					if strVal, ok := v.(string); ok {
+						attrMap[k] = types.StringValue(strVal)
+					}
+				}
+			}
+
+			// Create the permission object
+			permissionObj := types.ObjectValueMust(
+				map[string]attr.Type{
+					"id":         types.StringType,
+					"attributes": types.MapType{ElemType: types.StringType},
+				},
+				map[string]attr.Value{
+					"id":         types.StringValue(permission.ID),
+					"attributes": types.MapValueMust(types.StringType, attrMap),
+				},
+			)
+			permissionElements[i] = permissionObj
 		}
-		data.Permissions = types.SetValueMust(types.StringType, permissionElements)
+
+		// Define the object type for permissions
+		permissionObjectType := types.ObjectType{
+			AttrTypes: map[string]attr.Type{
+				"id":         types.StringType,
+				"attributes": types.MapType{ElemType: types.StringType},
+			},
+		}
+		data.Permissions = types.SetValueMust(permissionObjectType, permissionElements)
 	} else {
-		data.Permissions = types.SetValueMust(types.StringType, []attr.Value{})
+		// Define the object type for permissions
+		permissionObjectType := types.ObjectType{
+			AttrTypes: map[string]attr.Type{
+				"id":         types.StringType,
+				"attributes": types.MapType{ElemType: types.StringType},
+			},
+		}
+		data.Permissions = types.SetValueMust(permissionObjectType, []attr.Value{})
 	}
 
-	data.CreatedAt = types.StringValue(role.CreatedAt)
-	data.UpdatedAt = types.StringValue(role.UpdatedAt)
+	// API doesn't return these computed fields, so keep them as null
+	data.CreatedAt = types.StringNull()
+	data.UpdatedAt = types.StringNull()
+	data.Stage = types.StringNull()
 
 	// Save updated data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -278,21 +395,42 @@ func (r *CustomRoleResource) Update(ctx context.Context, req resource.UpdateRequ
 		return
 	}
 
+	// Use the provided ID from configuration
+	roleID := data.ID.ValueString()
+
 	// Create API custom role object
 	role := &iam.CustomRole{
+		ID:          roleID,
 		Name:        data.Name.ValueString(),
 		Title:       data.Title.ValueString(),
 		Description: data.Description.ValueString(),
 		Stage:       data.Stage.ValueString(),
 	}
 
-	// Convert permissions from Terraform set to string slice
+	// Convert permissions from Terraform set to Permission objects
 	if !data.Permissions.IsNull() && !data.Permissions.IsUnknown() {
-		permissions := make([]string, 0, len(data.Permissions.Elements()))
+		permissions := make([]iam.Permission, 0, len(data.Permissions.Elements()))
 		for _, elem := range data.Permissions.Elements() {
-			if str, ok := elem.(types.String); ok {
-				permissions = append(permissions, str.ValueString())
+			// Each element is an object with id and attributes
+			objValue := elem.(types.Object)
+			attrs := objValue.Attributes()
+
+			permission := iam.Permission{
+				ID: attrs["id"].(types.String).ValueString(),
 			}
+
+			// Handle attributes if present
+			if attrMap, ok := attrs["attributes"].(types.Map); ok && !attrMap.IsNull() {
+				attributes := make(map[string]interface{})
+				for k, v := range attrMap.Elements() {
+					if strVal, ok := v.(types.String); ok {
+						attributes[k] = strVal.ValueString()
+					}
+				}
+				permission.Attributes = attributes
+			}
+
+			permissions = append(permissions, permission)
 		}
 		role.Permissions = permissions
 	}
@@ -307,22 +445,56 @@ func (r *CustomRoleResource) Update(ctx context.Context, req resource.UpdateRequ
 		return
 	}
 
-	// Map API response back to resource model
-	data.Title = types.StringValue(updatedRole.Title)
-	data.Description = types.StringValue(updatedRole.Description)
-	data.Stage = types.StringValue(updatedRole.Stage)
+	// API doesn't return title, description, stage - keep the configured values from plan
 
 	if len(updatedRole.Permissions) > 0 {
 		permissionElements := make([]attr.Value, len(updatedRole.Permissions))
 		for i, permission := range updatedRole.Permissions {
-			permissionElements[i] = types.StringValue(permission)
+			// Create attributes map for this permission
+			attrMap := make(map[string]attr.Value)
+			if permission.Attributes != nil {
+				for k, v := range permission.Attributes {
+					if strVal, ok := v.(string); ok {
+						attrMap[k] = types.StringValue(strVal)
+					}
+				}
+			}
+
+			// Create the permission object
+			permissionObj := types.ObjectValueMust(
+				map[string]attr.Type{
+					"id":         types.StringType,
+					"attributes": types.MapType{ElemType: types.StringType},
+				},
+				map[string]attr.Value{
+					"id":         types.StringValue(permission.ID),
+					"attributes": types.MapValueMust(types.StringType, attrMap),
+				},
+			)
+			permissionElements[i] = permissionObj
 		}
-		data.Permissions = types.SetValueMust(types.StringType, permissionElements)
+
+		// Define the object type for permissions
+		permissionObjectType := types.ObjectType{
+			AttrTypes: map[string]attr.Type{
+				"id":         types.StringType,
+				"attributes": types.MapType{ElemType: types.StringType},
+			},
+		}
+		data.Permissions = types.SetValueMust(permissionObjectType, permissionElements)
 	} else {
-		data.Permissions = types.SetValueMust(types.StringType, []attr.Value{})
+		// Define the object type for permissions
+		permissionObjectType := types.ObjectType{
+			AttrTypes: map[string]attr.Type{
+				"id":         types.StringType,
+				"attributes": types.MapType{ElemType: types.StringType},
+			},
+		}
+		data.Permissions = types.SetValueMust(permissionObjectType, []attr.Value{})
 	}
 
-	data.UpdatedAt = types.StringValue(updatedRole.UpdatedAt)
+	// API doesn't return updated_at field, so keep as null
+	data.UpdatedAt = types.StringNull()
 
 	// Save updated data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

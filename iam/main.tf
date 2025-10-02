@@ -35,6 +35,20 @@ resource "hiiretail_iam_group" "test_group" {
   members     = []
 }
 
+resource "hiiretail_iam_custom_role" "test_custom_role" {
+  id          = "custom.TerraformTestShayne"
+  name        = "TerraformTestShayne"
+  description = "Test custom role created via Terraform"
+  
+  # Define permissions for the custom role
+  permissions = [
+    {
+      id = "iam.group.list"
+      attributes = {}
+    }
+  ]
+}
+
 output "created_group_name" {
   value = hiiretail_iam_group.test_group.name
 }
