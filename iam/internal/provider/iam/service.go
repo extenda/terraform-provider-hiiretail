@@ -10,13 +10,15 @@ import (
 
 // Service provides IAM API operations
 type Service struct {
-	client *client.ServiceClient
+	client   *client.ServiceClient
+	tenantID string
 }
 
 // NewService creates a new IAM service client
-func NewService(apiClient *client.Client) *Service {
+func NewService(apiClient *client.Client, tenantID string) *Service {
 	return &Service{
-		client: apiClient.IAMClient(),
+		client:   apiClient.IAMClient(),
+		tenantID: tenantID,
 	}
 }
 
@@ -90,7 +92,8 @@ func (s *Service) ListGroups(ctx context.Context, req *ListGroupsRequest) (*List
 		query["page"] = fmt.Sprintf("%d", req.Page)
 	}
 
-	resp, err := s.client.Get(ctx, "groups", query)
+	path := fmt.Sprintf("tenants/%s/groups", s.tenantID)
+	resp, err := s.client.Get(ctx, path, query)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list groups: %w", err)
 	}
@@ -109,7 +112,7 @@ func (s *Service) ListGroups(ctx context.Context, req *ListGroupsRequest) (*List
 
 // GetGroup retrieves a specific IAM group by ID
 func (s *Service) GetGroup(ctx context.Context, id string) (*Group, error) {
-	path := fmt.Sprintf("groups/%s", id)
+	path := fmt.Sprintf("tenants/%s/groups/%s", s.tenantID, id)
 	resp, err := s.client.Get(ctx, path, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get group %s: %w", id, err)
@@ -129,7 +132,22 @@ func (s *Service) GetGroup(ctx context.Context, id string) (*Group, error) {
 
 // CreateGroup creates a new IAM group
 func (s *Service) CreateGroup(ctx context.Context, group *Group) (*Group, error) {
-	resp, err := s.client.Post(ctx, "groups", group)
+	path := fmt.Sprintf("tenants/%s/groups", s.tenantID)
+
+	// Create a simplified request body without the ID field
+	requestBody := map[string]interface{}{
+		"name": group.Name,
+	}
+
+	// Only add optional fields if they have values
+	if group.Description != "" {
+		requestBody["description"] = group.Description
+	}
+	if len(group.Members) > 0 {
+		requestBody["members"] = group.Members
+	}
+
+	resp, err := s.client.Post(ctx, path, requestBody)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create group: %w", err)
 	}
@@ -148,14 +166,34 @@ func (s *Service) CreateGroup(ctx context.Context, group *Group) (*Group, error)
 
 // UpdateGroup updates an existing IAM group
 func (s *Service) UpdateGroup(ctx context.Context, id string, group *Group) (*Group, error) {
-	path := fmt.Sprintf("groups/%s", id)
-	resp, err := s.client.Put(ctx, path, group)
+	path := fmt.Sprintf("tenants/%s/groups/%s", s.tenantID, id)
+
+	// Create a simplified request body without the ID field (same as CreateGroup)
+	requestBody := map[string]interface{}{
+		"name": group.Name,
+	}
+
+	// Only add optional fields if they have values
+	if group.Description != "" {
+		requestBody["description"] = group.Description
+	}
+	if len(group.Members) > 0 {
+		requestBody["members"] = group.Members
+	}
+
+	resp, err := s.client.Put(ctx, path, requestBody)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update group %s: %w", id, err)
 	}
 
 	if err := client.CheckResponse(resp); err != nil {
 		return nil, err
+	}
+
+	// Handle 204 No Content response (common for successful updates)
+	if resp.StatusCode == 204 || len(resp.Body) == 0 {
+		// For 204 responses, fetch the updated group data separately
+		return s.GetGroup(ctx, id)
 	}
 
 	var result Group
@@ -168,7 +206,7 @@ func (s *Service) UpdateGroup(ctx context.Context, id string, group *Group) (*Gr
 
 // DeleteGroup deletes an IAM group
 func (s *Service) DeleteGroup(ctx context.Context, id string) error {
-	path := fmt.Sprintf("groups/%s", id)
+	path := fmt.Sprintf("tenants/%s/groups/%s", s.tenantID, id)
 	resp, err := s.client.Delete(ctx, path)
 	if err != nil {
 		return fmt.Errorf("failed to delete group %s: %w", id, err)
@@ -229,7 +267,8 @@ func (s *Service) GetRole(ctx context.Context, name string) (*Role, error) {
 
 // CreateCustomRole creates a new IAM custom role
 func (s *Service) CreateCustomRole(ctx context.Context, role *CustomRole) (*CustomRole, error) {
-	resp, err := s.client.Post(ctx, "roles", role)
+	path := fmt.Sprintf("tenants/%s/roles", s.tenantID)
+	resp, err := s.client.Post(ctx, path, role)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create custom role: %w", err)
 	}
@@ -248,7 +287,7 @@ func (s *Service) CreateCustomRole(ctx context.Context, role *CustomRole) (*Cust
 
 // GetCustomRole retrieves a specific IAM custom role by name
 func (s *Service) GetCustomRole(ctx context.Context, name string) (*CustomRole, error) {
-	path := fmt.Sprintf("roles/%s", name)
+	path := fmt.Sprintf("tenants/%s/roles/%s", s.tenantID, name)
 	resp, err := s.client.Get(ctx, path, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get custom role %s: %w", name, err)
@@ -268,7 +307,7 @@ func (s *Service) GetCustomRole(ctx context.Context, name string) (*CustomRole, 
 
 // UpdateCustomRole updates an existing IAM custom role
 func (s *Service) UpdateCustomRole(ctx context.Context, name string, role *CustomRole) (*CustomRole, error) {
-	path := fmt.Sprintf("roles/%s", name)
+	path := fmt.Sprintf("tenants/%s/roles/%s", s.tenantID, name)
 	resp, err := s.client.Put(ctx, path, role)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update custom role %s: %w", name, err)
@@ -288,7 +327,7 @@ func (s *Service) UpdateCustomRole(ctx context.Context, name string, role *Custo
 
 // DeleteCustomRole deletes an IAM custom role
 func (s *Service) DeleteCustomRole(ctx context.Context, name string) error {
-	path := fmt.Sprintf("roles/%s", name)
+	path := fmt.Sprintf("tenants/%s/roles/%s", s.tenantID, name)
 	resp, err := s.client.Delete(ctx, path)
 	if err != nil {
 		return fmt.Errorf("failed to delete custom role %s: %w", name, err)

@@ -135,7 +135,7 @@ func (r *RoleBindingResource) Configure(ctx context.Context, req resource.Config
 	}
 
 	r.client = client
-	r.iamService = iam.NewService(client)
+	r.iamService = iam.NewService(client, client.TenantID())
 
 	tflog.Info(ctx, "Configured IAM Role Binding Resource")
 }

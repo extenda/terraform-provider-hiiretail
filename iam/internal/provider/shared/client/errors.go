@@ -16,9 +16,6 @@ type Error struct {
 
 // Error implements the error interface
 func (e *Error) Error() string {
-	if e.Code != "" {
-		return fmt.Sprintf("API error %d (%s): %s", e.StatusCode, e.Code, e.Message)
-	}
 	return fmt.Sprintf("API error %d: %s", e.StatusCode, e.Message)
 }
 

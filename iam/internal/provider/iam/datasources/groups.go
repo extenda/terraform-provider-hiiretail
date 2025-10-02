@@ -121,7 +121,7 @@ func (d *GroupsDataSource) Configure(ctx context.Context, req datasource.Configu
 	}
 
 	d.client = client
-	d.iamService = iam.NewService(client)
+	d.iamService = iam.NewService(client, client.TenantID())
 
 	tflog.Info(ctx, "Configured IAM Groups Data Source")
 }

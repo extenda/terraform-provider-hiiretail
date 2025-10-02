@@ -127,7 +127,7 @@ func (d *RolesDataSource) Configure(ctx context.Context, req datasource.Configur
 	}
 
 	d.client = client
-	d.iamService = iam.NewService(client)
+	d.iamService = iam.NewService(client, client.TenantID())
 
 	tflog.Info(ctx, "Configured IAM Roles Data Source")
 }

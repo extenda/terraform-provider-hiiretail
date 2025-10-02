@@ -402,7 +402,7 @@ func (r *IamCustomRoleResource) modelToAPIRequest(ctx context.Context, data IamC
 
 // createCustomRole makes API call to create custom role
 func (r *IamCustomRoleResource) createCustomRole(ctx context.Context, req *CustomRoleRequest) (*CustomRoleResponse, error) {
-	url := fmt.Sprintf("%s/iam/v1/custom-roles", r.baseURL)
+	url := fmt.Sprintf("%s/api/v1/tenants/%s/roles", r.baseURL, r.tenantID)
 
 	jsonData, err := json.Marshal(req)
 	if err != nil {
@@ -441,7 +441,7 @@ func (r *IamCustomRoleResource) createCustomRole(ctx context.Context, req *Custo
 
 // readCustomRole makes API call to read custom role
 func (r *IamCustomRoleResource) readCustomRole(ctx context.Context, id string) (*CustomRoleResponse, error) {
-	url := fmt.Sprintf("%s/iam/v1/custom-roles/%s", r.baseURL, id)
+	url := fmt.Sprintf("%s/api/v1/tenants/%s/roles/%s", r.baseURL, r.tenantID, id)
 
 	httpReq, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
@@ -478,7 +478,7 @@ func (r *IamCustomRoleResource) readCustomRole(ctx context.Context, id string) (
 
 // updateCustomRole makes API call to update custom role
 func (r *IamCustomRoleResource) updateCustomRole(ctx context.Context, id string, req *CustomRoleRequest) (*CustomRoleResponse, error) {
-	url := fmt.Sprintf("%s/iam/v1/custom-roles/%s", r.baseURL, id)
+	url := fmt.Sprintf("%s/api/v1/tenants/%s/roles/%s", r.baseURL, r.tenantID, id)
 
 	jsonData, err := json.Marshal(req)
 	if err != nil {
@@ -521,7 +521,7 @@ func (r *IamCustomRoleResource) updateCustomRole(ctx context.Context, id string,
 
 // deleteCustomRole makes API call to delete custom role
 func (r *IamCustomRoleResource) deleteCustomRole(ctx context.Context, id string) error {
-	url := fmt.Sprintf("%s/iam/v1/custom-roles/%s", r.baseURL, id)
+	url := fmt.Sprintf("%s/api/v1/tenants/%s/roles/%s", r.baseURL, r.tenantID, id)
 
 	httpReq, err := http.NewRequestWithContext(ctx, "DELETE", url, nil)
 	if err != nil {

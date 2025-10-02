@@ -50,9 +50,7 @@ resource "hiiretail_iam_custom_role" "test_custom_role" {
   
   # Define permissions for the custom role
   permissions = [
-    "iam.groups.read",
-    "iam.groups.write", 
-    "iam.roles.read"
+    "iam.group.get"
   ]
 }
 

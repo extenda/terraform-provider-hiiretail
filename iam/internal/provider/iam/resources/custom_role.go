@@ -148,7 +148,7 @@ func (r *CustomRoleResource) Configure(ctx context.Context, req resource.Configu
 	}
 
 	r.client = client
-	r.iamService = iam.NewService(client)
+	r.iamService = iam.NewService(client, client.TenantID())
 
 	tflog.Info(ctx, "Configured IAM Custom Role Resource")
 }

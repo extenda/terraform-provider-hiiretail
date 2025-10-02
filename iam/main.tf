@@ -1,0 +1,40 @@
+terraform {
+  required_providers {
+    hiiretail = {
+      source = "registry.terraform.io/extenda/hiiretail"
+    }
+  }
+}
+
+provider "hiiretail" {
+  client_id     = var.client_id
+  client_secret = var.client_secret
+  tenant_id     = var.tenant_id
+}
+
+variable "client_id" {
+  description = "OAuth2 client ID"
+  type        = string
+}
+
+variable "client_secret" {
+  description = "OAuth2 client secret"
+  type        = string
+  sensitive   = true
+}
+
+variable "tenant_id" {
+  description = "Tenant ID"
+  type        = string
+  default     = "CIR7nQwtS0rA6t0S6ejd"
+}
+
+resource "hiiretail_iam_group" "test_group" {
+  name        = "testShayneGroup"
+  description = "This is my second description"
+  members     = []
+}
+
+output "created_group_name" {
+  value = hiiretail_iam_group.test_group.name
+}

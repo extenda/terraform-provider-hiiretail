@@ -28,8 +28,8 @@ type Config struct {
 // DefaultConfig returns a default client configuration
 func DefaultConfig() *Config {
 	return &Config{
-		BaseURL:      "https://api.hiiretail.com",
-		IAMEndpoint:  "/iam/v1",
+		BaseURL:      "https://iam-api.retailsvc.com",
+		IAMEndpoint:  "/api/v1",
 		CCCEndpoint:  "/ccc/v1",
 		UserAgent:    "terraform-provider-hiiretail/1.0.0",
 		Timeout:      30 * time.Second,
@@ -45,6 +45,7 @@ type Client struct {
 	httpClient *http.Client
 	auth       *auth.Config
 	baseURL    *url.URL
+	tenantID   string
 }
 
 // New creates a new HiiRetail API client
@@ -72,6 +73,7 @@ func New(authConfig *auth.Config, clientConfig *Config) (*Client, error) {
 		httpClient: httpClient,
 		auth:       authConfig,
 		baseURL:    baseURL,
+		tenantID:   authConfig.TenantID,
 	}, nil
 }
 
@@ -110,6 +112,7 @@ func (c *Client) Do(ctx context.Context, req *Request) (*Response, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to marshal request body: %w", err)
 		}
+
 		body = strings.NewReader(string(bodyBytes))
 	}
 
@@ -251,6 +254,9 @@ type ServiceClient struct {
 func (sc *ServiceClient) Do(ctx context.Context, req *Request) (*Response, error) {
 	// Prefix path with service endpoint
 	req.Path = strings.TrimSuffix(sc.endpoint, "/") + "/" + strings.TrimPrefix(req.Path, "/")
+
+	// Debug logging for URL construction
+
 	return sc.client.Do(ctx, req)
 }
 
@@ -296,4 +302,19 @@ func (sc *ServiceClient) Delete(ctx context.Context, path string) (*Response, er
 		Method: http.MethodDelete,
 		Path:   path,
 	})
+}
+
+// TenantID returns the tenant ID configured for this client
+func (c *Client) TenantID() string {
+	return c.tenantID
+}
+
+// HTTPClient returns the underlying HTTP client
+func (c *Client) HTTPClient() *http.Client {
+	return c.httpClient
+}
+
+// BaseURL returns the base URL configured for this client
+func (c *Client) BaseURL() string {
+	return c.baseURL.String()
 }
