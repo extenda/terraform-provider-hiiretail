@@ -5,12 +5,10 @@ import (
 	"flag"
 	"log"
 
-	"github.com/extenda/hiiretail-terraform-providers/hiiretail/internal/provider"
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
-)
 
-//go:generate terraform fmt -recursive ./examples/
-//go:generate go run github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs
+	"github.com/extenda/hiiretail-terraform-providers/hiiretail/internal/provider"
+)
 
 var (
 	version string = "dev"

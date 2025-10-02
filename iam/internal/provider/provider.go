@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"os"
 	"strings"
 	"time"
@@ -21,6 +22,14 @@ import (
 	"github.com/extenda/hiiretail-terraform-providers/hiiretail/internal/provider/shared/client"
 	"github.com/extenda/hiiretail-terraform-providers/hiiretail/internal/provider/shared/validators"
 )
+
+// APIClient represents the configuration for making API calls
+// This is used by resources that need direct HTTP access
+type APIClient struct {
+	BaseURL    string
+	TenantID   string
+	HTTPClient *http.Client
+}
 
 // Ensure HiiRetailProvider satisfies various provider interfaces.
 var _ provider.Provider = &HiiRetailProvider{}
@@ -136,15 +145,26 @@ func (p *HiiRetailProvider) Configure(ctx context.Context, req provider.Configur
 		return
 	}
 
-	// Build client configuration with hardcoded URLs
+	// Build client configuration with hardcoded URLs and defaults
 	clientConfig := &client.Config{
-		BaseURL:      "https://iam-api.retailsvc.com", // Hardcoded IAM API URL
-		IAMEndpoint:  data.IAMEndpoint.ValueString(),
-		CCCEndpoint:  data.CCCEndpoint.ValueString(),
-		Timeout:      time.Duration(data.TimeoutSeconds.ValueInt64()) * time.Second,
-		MaxRetries:   int(data.MaxRetries.ValueInt64()),
+		BaseURL:      "https://iam-api.retailsvc.com", // Hardcoded IAM API URL base
+		IAMEndpoint:  "/api/v1",                       // Use correct API version endpoint
+		CCCEndpoint:  "/ccc/v1",                       // Default CCC endpoint
+		Timeout:      30 * time.Second,                // Default timeout
+		MaxRetries:   3,                               // Default retries
 		RetryWaitMin: 1 * time.Second,
 		RetryWaitMax: 30 * time.Second,
+	}
+
+	// Override with user-provided values if present
+	if !data.CCCEndpoint.IsNull() && !data.CCCEndpoint.IsUnknown() {
+		clientConfig.CCCEndpoint = data.CCCEndpoint.ValueString()
+	}
+	if !data.TimeoutSeconds.IsNull() && !data.TimeoutSeconds.IsUnknown() {
+		clientConfig.Timeout = time.Duration(data.TimeoutSeconds.ValueInt64()) * time.Second
+	}
+	if !data.MaxRetries.IsNull() && !data.MaxRetries.IsUnknown() {
+		clientConfig.MaxRetries = int(data.MaxRetries.ValueInt64())
 	}
 
 	// Convert AuthClientConfig to auth.Config with hardcoded URLs
@@ -153,7 +173,7 @@ func (p *HiiRetailProvider) Configure(ctx context.Context, req provider.Configur
 		ClientSecret:     authConfig.ClientSecret,
 		TenantID:         authConfig.TenantID,
 		AuthURL:          authConfig.TokenURL,             // Already set to hardcoded auth URL
-		APIURL:           "https://iam-api.retailsvc.com", // Hardcoded IAM API URL
+		APIURL:           "https://iam-api.retailsvc.com", // Hardcoded IAM API URL base (auth client handles path separately)
 		Scopes:           authConfig.Scopes,
 		Timeout:          authConfig.Timeout,
 		MaxRetries:       authConfig.MaxRetries,

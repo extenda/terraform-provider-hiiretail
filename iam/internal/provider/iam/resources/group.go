@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/setdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -36,8 +37,6 @@ type GroupResourceModel struct {
 	Name        types.String `tfsdk:"name"`
 	Description types.String `tfsdk:"description"`
 	Members     types.Set    `tfsdk:"members"`
-	CreatedAt   types.String `tfsdk:"created_at"`
-	UpdatedAt   types.String `tfsdk:"updated_at"`
 }
 
 // NewGroupResource creates a new group resource
@@ -88,22 +87,14 @@ func (r *GroupResource) Schema(ctx context.Context, req resource.SchemaRequest, 
 				Description:         "Set of member identifiers (user:email@domain.com or group:groupname).",
 				MarkdownDescription: "Set of member identifiers in the format `user:email@domain.com` or `group:groupname`.",
 				Optional:            true,
+				Computed:            true,
 				Validators:          []validator.Set{
 					// TODO: Add set validators for member identifiers
 				},
 				PlanModifiers: []planmodifier.Set{
 					setplanmodifier.UseStateForUnknown(),
 				},
-			},
-			"created_at": schema.StringAttribute{
-				Description:         "Timestamp when the group was created.",
-				MarkdownDescription: "Timestamp when the group was created.",
-				Computed:            true,
-			},
-			"updated_at": schema.StringAttribute{
-				Description:         "Timestamp when the group was last updated.",
-				MarkdownDescription: "Timestamp when the group was last updated.",
-				Computed:            true,
+				Default: setdefault.StaticValue(types.SetValueMust(types.StringType, []attr.Value{})),
 			},
 		},
 	}
@@ -126,7 +117,7 @@ func (r *GroupResource) Configure(ctx context.Context, req resource.ConfigureReq
 	}
 
 	r.client = client
-	r.iamService = iam.NewService(client)
+	r.iamService = iam.NewService(client, client.TenantID())
 
 	tflog.Info(ctx, "Configured IAM Group Resource")
 }
@@ -141,13 +132,17 @@ func (r *GroupResource) Create(ctx context.Context, req resource.CreateRequest, 
 		return
 	}
 
-	// Create API group object
+	// Create API group object with only required fields
 	group := &iam.Group{
-		Name:        data.Name.ValueString(),
-		Description: data.Description.ValueString(),
+		Name: data.Name.ValueString(),
 	}
 
-	// Convert members from Terraform set to string slice
+	// Only add description if it's provided
+	if !data.Description.IsNull() && !data.Description.IsUnknown() && data.Description.ValueString() != "" {
+		group.Description = data.Description.ValueString()
+	}
+
+	// Only add members if they're provided
 	if !data.Members.IsNull() && !data.Members.IsUnknown() {
 		members := make([]string, 0, len(data.Members.Elements()))
 		for _, elem := range data.Members.Elements() {
@@ -155,15 +150,22 @@ func (r *GroupResource) Create(ctx context.Context, req resource.CreateRequest, 
 				members = append(members, str.ValueString())
 			}
 		}
-		group.Members = members
+		if len(members) > 0 {
+			group.Members = members
+		}
 	}
 
-	// Create the group via API
+	// Debug: Log the exact JSON being sent
+	tflog.Info(ctx, "Creating group with data", map[string]interface{}{
+		"name":        group.Name,
+		"description": group.Description,
+		"members":     group.Members,
+	})
 	createdGroup, err := r.iamService.CreateGroup(ctx, group)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error Creating IAM Group",
-			"Could not create group, unexpected error: "+err.Error(),
+			fmt.Sprintf("Could not create group, unexpected error: %s", err.Error()),
 		)
 		return
 	}
@@ -171,8 +173,22 @@ func (r *GroupResource) Create(ctx context.Context, req resource.CreateRequest, 
 	// Map API response back to resource model
 	data.ID = types.StringValue(createdGroup.ID)
 	data.Name = types.StringValue(createdGroup.Name)
-	data.Description = types.StringValue(createdGroup.Description)
 
+	// Handle description - only set if it was provided in the config or returned by API
+	if !data.Description.IsNull() && !data.Description.IsUnknown() && data.Description.ValueString() != "" {
+		// Description was specified in config, use what API returned (if any)
+		if createdGroup.Description != "" {
+			data.Description = types.StringValue(createdGroup.Description)
+		}
+	} else if createdGroup.Description != "" {
+		// Description wasn't in config but API returned one
+		data.Description = types.StringValue(createdGroup.Description)
+	} else {
+		// No description in config and none returned by API
+		data.Description = types.StringNull()
+	}
+
+	// Always set members field to ensure consistency
 	if len(createdGroup.Members) > 0 {
 		memberElements := make([]attr.Value, len(createdGroup.Members))
 		for i, member := range createdGroup.Members {
@@ -180,11 +196,9 @@ func (r *GroupResource) Create(ctx context.Context, req resource.CreateRequest, 
 		}
 		data.Members = types.SetValueMust(types.StringType, memberElements)
 	} else {
+		// Always set to empty set when no members, for cleaner output
 		data.Members = types.SetValueMust(types.StringType, []attr.Value{})
 	}
-
-	data.CreatedAt = types.StringValue(createdGroup.CreatedAt)
-	data.UpdatedAt = types.StringValue(createdGroup.UpdatedAt)
 
 	// Write logs using the tflog package
 	tflog.Trace(ctx, "created IAM group resource")
@@ -220,7 +234,16 @@ func (r *GroupResource) Read(ctx context.Context, req resource.ReadRequest, resp
 
 	// Map API response to resource model
 	data.Name = types.StringValue(group.Name)
-	data.Description = types.StringValue(group.Description)
+
+	// Only set description if it's provided by the API and not empty
+	if group.Description != "" {
+		data.Description = types.StringValue(group.Description)
+	} else {
+		// If description is empty or not provided, keep it as null (unless it was explicitly set in config)
+		if data.Description.IsNull() {
+			data.Description = types.StringNull()
+		}
+	}
 
 	if len(group.Members) > 0 {
 		memberElements := make([]attr.Value, len(group.Members))
@@ -229,11 +252,9 @@ func (r *GroupResource) Read(ctx context.Context, req resource.ReadRequest, resp
 		}
 		data.Members = types.SetValueMust(types.StringType, memberElements)
 	} else {
+		// Always set to empty set when no members, for cleaner output
 		data.Members = types.SetValueMust(types.StringType, []attr.Value{})
 	}
-
-	data.CreatedAt = types.StringValue(group.CreatedAt)
-	data.UpdatedAt = types.StringValue(group.UpdatedAt)
 
 	// Save updated data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -278,8 +299,16 @@ func (r *GroupResource) Update(ctx context.Context, req resource.UpdateRequest, 
 
 	// Map API response back to resource model
 	data.Name = types.StringValue(updatedGroup.Name)
-	data.Description = types.StringValue(updatedGroup.Description)
 
+	// Only update description if it's provided by the API
+	if updatedGroup.Description != "" {
+		data.Description = types.StringValue(updatedGroup.Description)
+	} else {
+		// Keep the null value if API doesn't return description
+		data.Description = types.StringNull()
+	}
+
+	// Handle members - maintain consistency with plan
 	if len(updatedGroup.Members) > 0 {
 		memberElements := make([]attr.Value, len(updatedGroup.Members))
 		for i, member := range updatedGroup.Members {
@@ -287,10 +316,9 @@ func (r *GroupResource) Update(ctx context.Context, req resource.UpdateRequest, 
 		}
 		data.Members = types.SetValueMust(types.StringType, memberElements)
 	} else {
+		// Always set to empty set when no members, for cleaner output
 		data.Members = types.SetValueMust(types.StringType, []attr.Value{})
 	}
-
-	data.UpdatedAt = types.StringValue(updatedGroup.UpdatedAt)
 
 	// Save updated data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
