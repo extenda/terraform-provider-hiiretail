@@ -34,14 +34,20 @@ type Group struct {
 
 // CustomRole represents an IAM custom role
 type CustomRole struct {
-	ID          string   `json:"id"`
-	Name        string   `json:"name"`
-	Title       string   `json:"title,omitempty"`
-	Description string   `json:"description,omitempty"`
-	Permissions []string `json:"permissions"`
-	Stage       string   `json:"stage,omitempty"`
-	CreatedAt   string   `json:"created_at,omitempty"`
-	UpdatedAt   string   `json:"updated_at,omitempty"`
+	ID          string       `json:"id"`
+	Name        string       `json:"name,omitempty"`
+	Title       string       `json:"title,omitempty"`
+	Description string       `json:"description,omitempty"`
+	Permissions []Permission `json:"permissions"`
+	Stage       string       `json:"stage,omitempty"`
+	CreatedAt   string       `json:"created_at,omitempty"`
+	UpdatedAt   string       `json:"updated_at,omitempty"`
+}
+
+// Permission represents a permission in a custom role
+type Permission struct {
+	ID         string                 `json:"id"`
+	Attributes map[string]interface{} `json:"attributes,omitempty"`
 }
 
 // RoleBinding represents an IAM role binding
@@ -268,7 +274,19 @@ func (s *Service) GetRole(ctx context.Context, name string) (*Role, error) {
 // CreateCustomRole creates a new IAM custom role
 func (s *Service) CreateCustomRole(ctx context.Context, role *CustomRole) (*CustomRole, error) {
 	path := fmt.Sprintf("tenants/%s/roles", s.tenantID)
-	resp, err := s.client.Post(ctx, path, role)
+
+	// Create a request body that matches the API specification
+	requestBody := map[string]interface{}{
+		"id":          role.ID,
+		"permissions": role.Permissions,
+	}
+
+	// Only add optional fields if they have values
+	if role.Name != "" {
+		requestBody["name"] = role.Name
+	}
+
+	resp, err := s.client.Post(ctx, path, requestBody)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create custom role: %w", err)
 	}
@@ -308,13 +326,30 @@ func (s *Service) GetCustomRole(ctx context.Context, name string) (*CustomRole, 
 // UpdateCustomRole updates an existing IAM custom role
 func (s *Service) UpdateCustomRole(ctx context.Context, name string, role *CustomRole) (*CustomRole, error) {
 	path := fmt.Sprintf("tenants/%s/roles/%s", s.tenantID, name)
-	resp, err := s.client.Put(ctx, path, role)
+
+	// Create a request body that matches the API specification
+	requestBody := map[string]interface{}{
+		"permissions": role.Permissions,
+	}
+
+	// Only add optional fields if they have values
+	if role.Name != "" {
+		requestBody["name"] = role.Name
+	}
+
+	resp, err := s.client.Put(ctx, path, requestBody)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update custom role %s: %w", name, err)
 	}
 
 	if err := client.CheckResponse(resp); err != nil {
 		return nil, err
+	}
+
+	// Handle 204 No Content response (common for successful updates)
+	if resp.StatusCode == 204 || len(resp.Body) == 0 {
+		// For 204 responses, fetch the updated role data separately
+		return s.GetCustomRole(ctx, name)
 	}
 
 	var result CustomRole
