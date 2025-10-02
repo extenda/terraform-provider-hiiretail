@@ -11,6 +11,12 @@ Auto-generated from all feature plans. Last updated: 2025-09-28
 - RESTful API backend with OAuth2 client credentials authentication (005-add-tests-for)
 - Go 1.21+ + OAuth2 Discovery, clientcredentials, HTTP client with connection pooling (006-correctly-handle-client)
 - Hii Retail OAuth Client Management Service (OCMS) integration (006-correctly-handle-client)
+- Go 1.21+ (matches existing Terraform provider) + Terraform Plugin Framework v1.16.0, golang.org/x/oauth2 v0.30.0 (007-oauth2-authentication-with)
+- N/A (stateless authentication service) (007-oauth2-authentication-with)
+- Go 1.19+ (Terraform Plugin Framework requirement) + HashiCorp Terraform Plugin Framework, golang.org/x/oauth2, existing HiiRetail APIs (008-the-iam-is)
+- N/A (provider manages external API resources, not local storage) (008-the-iam-is)
+- Go 1.19+ (Terraform Plugin Framework) + HashiCorp Terraform Plugin Framework, OAuth2 client libraries, HiiRetail IAM API clients (009-improve-resource-usability)
+- N/A (provider manages remote API resources) (009-improve-resource-usability)
 
 ## Project Structure
 ```
@@ -49,31 +55,16 @@ Go 1.21+: Follow standard conventions
 - Provide clear error messages distinguishing between credential, network, and server errors
 
 ## Recent Changes
-- 006-correctly-handle-client: Added OAuth2 client credentials authentication with OCMS integration, discovery protocol, token lifecycle management, and enhanced error handling
-- 005-add-tests-for: Added Go 1.21+ (terraform-plugin-framework v1.16.0) + HashiCorp terraform-plugin-framework, terraform-plugin-testing, golang.org/x/oauth2  
-- 004-ensure-that-the: Added Go 1.23.0 + Terraform Plugin Framework v1.4.2, terraform-plugin-testing v1.13.3, testify v1.8.4, golang.org/x/oauth2 v0.26.0
-- 002-ensure-that-the: Added Go 1.21+ + HashiCorp Terraform Plugin Framework, golang.org/x/oauth2, terraform-plugin-framework-validators
+- 009-improve-resource-usability: Added Go 1.19+ (Terraform Plugin Framework) + HashiCorp Terraform Plugin Framework, OAuth2 client libraries, HiiRetail IAM API clients
+- 008-the-iam-is: Added Go 1.19+ (Terraform Plugin Framework requirement) + HashiCorp Terraform Plugin Framework, golang.org/x/oauth2, existing HiiRetail APIs
+- 007-oauth2-authentication-with: Added Go 1.21+ (matches existing Terraform provider) + Terraform Plugin Framework v1.16.0, golang.org/x/oauth2 v0.30.0
 
 ### OAuth2 Authentication Enhancement (006-correctly-handle-client)
 **Key Components**:
-- OAuth2 Discovery Client: Automatically discover endpoints from https://auth.retailsvc.com/.well-known/openid-configuration
-- Enhanced Auth Client: Secure OAuth2 client credentials flow with token caching and refresh
-- Configuration Validation: Comprehensive validation of OAuth2 parameters with clear error messages
-- Error Handling: Distinguish between credential errors, network failures, and server errors with appropriate retry logic
-- Security: Mark sensitive fields in schemas, no credential logging, TLS-only communication
-- Performance: Discovery caching, connection pooling, efficient token reuse
 
 **Testing Strategy**:
-- Unit tests for discovery client and authentication logic
-- Integration tests with real OCMS endpoints  
-- Provider configuration tests with various scenarios
-- Error scenario validation and recovery testing
 
 **Configuration Support**:
-- Provider block configuration with OAuth2 parameters
-- Environment variable support (HIIRETAIL_TENANT_ID, HIIRETAIL_CLIENT_ID, HIIRETAIL_CLIENT_SECRET)
-- Automatic endpoint discovery with manual override capability
-- Configurable timeouts and retry policies
 
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->

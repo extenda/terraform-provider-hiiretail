@@ -28,7 +28,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/extenda/hiiretail-terraform-providers/iam/internal/provider/auth"
+	"hiiretail/internal/provider/shared/auth"
 )
 
 func main() {

@@ -45,6 +45,8 @@ provider "hiiretail_iam" {
 | `client_secret` | string | Yes | OIDC client secret for IAM API authentication (sensitive) |
 | `base_url` | string | No | Base URL of the IAM API (defaults to https://iam-api.retailsvc-test.com) |
 
+> **📖 For detailed authentication information including test credentials, see the [Authentication Guide](docs/guides/authentication.md)**
+
 ### Authentication
 
 The provider uses OIDC client credentials flow for authentication. The authentication process:

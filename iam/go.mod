@@ -1,4 +1,4 @@
-module github.com/extenda/hiiretail-terraform-providers/iam
+module github.com/extenda/hiiretail-terraform-providers/hiiretail
 
 go 1.24.0
 

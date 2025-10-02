@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/extenda/hiiretail-terraform-providers/iam/internal/provider/testutils"
+	"github.com/extenda/hiiretail-terraform-providers/hiiretail/internal/provider/testutils"
 	"golang.org/x/oauth2/clientcredentials"
 )
 

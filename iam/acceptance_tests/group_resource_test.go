@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
-	"github.com/extenda/hiiretail-terraform-providers/iam/internal/provider"
+	"github.com/extenda/hiiretail-terraform-providers/hiiretail/internal/provider"
 )
 
 // TestAccGroupResource_basic tests basic group creation and management

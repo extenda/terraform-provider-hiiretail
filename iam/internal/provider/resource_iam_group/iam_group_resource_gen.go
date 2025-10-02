@@ -4,10 +4,12 @@ package resource_iam_group
 
 import (
 	"context"
+
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
+	"github.com/extenda/hiiretail-terraform-providers/hiiretail/internal/validation"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 )
 
@@ -19,6 +21,7 @@ func IamGroupResourceSchema(ctx context.Context) schema.Schema {
 				Computed: true,
 				Validators: []validator.String{
 					stringvalidator.LengthAtMost(255),
+					validation.NewDescriptionValidator("group"),
 				},
 			},
 			"id": schema.StringAttribute{
@@ -31,6 +34,7 @@ func IamGroupResourceSchema(ctx context.Context) schema.Schema {
 				Required: true,
 				Validators: []validator.String{
 					stringvalidator.LengthAtMost(255),
+					validation.NewNameValidator("group"),
 				},
 			},
 			"status": schema.StringAttribute{
