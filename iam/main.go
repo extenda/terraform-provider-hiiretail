@@ -5,7 +5,7 @@ import (
 	"flag"
 	"log"
 
-	"github.com/extenda/hiiretail-terraform-providers/iam/internal/provider"
+	"github.com/extenda/hiiretail-terraform-providers/hiiretail/internal/provider"
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 )
 
@@ -23,7 +23,7 @@ func main() {
 	flag.Parse()
 
 	opts := providerserver.ServeOpts{
-		Address: "registry.terraform.io/extenda/hiiretail-iam",
+		Address: "registry.terraform.io/extenda/hiiretail",
 		Debug:   debug,
 	}
 

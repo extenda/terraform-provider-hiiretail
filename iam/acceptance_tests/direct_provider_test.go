@@ -7,8 +7,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 
-	hiiretailprovider "github.com/extenda/hiiretail-terraform-providers/iam/internal/provider"
-	"github.com/extenda/hiiretail-terraform-providers/iam/internal/provider/testutils"
+	hiiretailprovider "github.com/extenda/hiiretail-terraform-providers/hiiretail/internal/provider"
+	"github.com/extenda/hiiretail-terraform-providers/hiiretail/internal/provider/testutils"
 )
 
 // TestProvider_DirectConfiguration tests provider configuration without Terraform framework

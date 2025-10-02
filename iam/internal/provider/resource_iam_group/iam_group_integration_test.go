@@ -6,7 +6,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
-	"github.com/extenda/hiiretail-terraform-providers/iam/internal/provider/testutils"
+	"github.com/extenda/hiiretail-terraform-providers/hiiretail/internal/provider/testutils"
 )
 
 // TestGroupResourceIntegrationCreate tests Create operation with mock API server

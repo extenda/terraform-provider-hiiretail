@@ -1,0 +1,99 @@
+terraform {
+  required_providers {
+    hiiretail = {
+      source = "extenda/hiiretail"
+    }
+  }
+}
+
+# Configure the HiiRetail provider
+provider "hiiretail" {
+  client_id     = var.client_id
+  client_secret = var.client_secret
+  tenant_id     = var.tenant_id
+  
+  # Optional configuration
+  timeout_seconds = 30
+  max_retries = 3
+}
+
+# Test variables
+variable "client_id" {
+  description = "OAuth2 client ID"
+  type        = string
+  sensitive   = true
+}
+
+variable "client_secret" {
+  description = "OAuth2 client secret"
+  type        = string
+  sensitive   = true
+}
+
+variable "tenant_id" {
+  description = "Tenant ID for resources"
+  type        = string
+  default     = "CIR7nQwtS0rA6t0S6ejd" # TestRunner Tenant ID
+}
+
+# IAM Group Resource
+resource "hiiretail_iam_group" "test_group" {
+  name        = "test-group-unique-id"
+  description = "Test IAM group created via Terraform"
+}
+
+# IAM Custom Role Resource
+resource "hiiretail_iam_custom_role" "test_custom_role" {
+  name        = "test-custom-role-unique-id"
+  title       = "Test Custom Role"
+  description = "Test custom role created via Terraform"
+  
+  # Define permissions for the custom role
+  permissions = [
+    "iam.groups.read",
+    "iam.groups.write", 
+    "iam.roles.read"
+  ]
+}
+
+# IAM Role Binding Resource
+resource "hiiretail_iam_role_binding" "test_role_binding" {
+  name = "test-role-binding-unique-id"
+  role = "roles/custom.${hiiretail_iam_custom_role.test_custom_role.name}"
+  
+  # Members that will be granted this role. Only group is supported as an option. 
+  members = [
+    "group:${hiiretail_iam_group.test_group.name}"
+  ]
+}
+
+# Output the created resources
+output "created_group" {
+  description = "Details of the created IAM group"
+  value = {
+    id          = hiiretail_iam_group.test_group.id
+    name        = hiiretail_iam_group.test_group.name
+    description = hiiretail_iam_group.test_group.description
+  }
+}
+
+output "created_custom_role" {
+  description = "Details of the created custom role"
+  value = {
+    id          = hiiretail_iam_custom_role.test_custom_role.id
+    name        = hiiretail_iam_custom_role.test_custom_role.name
+    description = hiiretail_iam_custom_role.test_custom_role.description
+    permissions = hiiretail_iam_custom_role.test_custom_role.permissions
+  }
+}
+
+output "created_role_binding" {
+  description = "Details of the created role binding"
+  value = {
+    id        = hiiretail_iam_role_binding.test_role_binding.id
+    name      = hiiretail_iam_role_binding.test_role_binding.name
+    role      = hiiretail_iam_role_binding.test_role_binding.role
+    members   = hiiretail_iam_role_binding.test_role_binding.members
+    condition = hiiretail_iam_role_binding.test_role_binding.condition
+  }
+}

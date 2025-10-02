@@ -3,7 +3,7 @@ package acceptance_tests
 import (
 	"testing"
 
-	"github.com/extenda/hiiretail-terraform-providers/iam/internal/provider/testutils"
+	"github.com/extenda/hiiretail-terraform-providers/hiiretail/internal/provider/testutils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )

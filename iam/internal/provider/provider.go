@@ -3,46 +3,124 @@ package provider
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"os"
-	"strconv"
 	"strings"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
+	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 
-	"github.com/extenda/hiiretail-terraform-providers/iam/internal/provider/auth"
-	"github.com/extenda/hiiretail-terraform-providers/iam/internal/provider/provider_hiiretail_iam"
-	"github.com/extenda/hiiretail-terraform-providers/iam/internal/provider/resource_iam_custom_role"
-	"github.com/extenda/hiiretail-terraform-providers/iam/internal/provider/resource_iam_group"
-	"github.com/extenda/hiiretail-terraform-providers/iam/internal/provider/resource_iam_role_binding"
+	"github.com/extenda/hiiretail-terraform-providers/hiiretail/internal/provider/iam/datasources"
+	"github.com/extenda/hiiretail-terraform-providers/hiiretail/internal/provider/iam/resources"
+	"github.com/extenda/hiiretail-terraform-providers/hiiretail/internal/provider/shared/auth"
+	"github.com/extenda/hiiretail-terraform-providers/hiiretail/internal/provider/shared/client"
+	"github.com/extenda/hiiretail-terraform-providers/hiiretail/internal/provider/shared/validators"
 )
 
-// Ensure HiiRetailIamProvider satisfies various provider interfaces.
-var _ provider.Provider = &HiiRetailIamProvider{}
+// Ensure HiiRetailProvider satisfies various provider interfaces.
+var _ provider.Provider = &HiiRetailProvider{}
 
-// HiiRetailIamProvider defines the provider implementation.
-type HiiRetailIamProvider struct {
+// HiiRetailProvider defines the provider implementation.
+type HiiRetailProvider struct {
 	version string
 }
 
-// HiiRetailIamProviderModel describes the provider data model.
-type HiiRetailIamProviderModel = provider_hiiretail_iam.HiiretailIamModel
+// HiiRetailProviderModel describes the provider data model.
+type HiiRetailProviderModel struct {
+	ClientID       types.String `tfsdk:"client_id"`
+	ClientSecret   types.String `tfsdk:"client_secret"`
+	TenantID       types.String `tfsdk:"tenant_id"`
+	BaseURL        types.String `tfsdk:"base_url"`
+	IAMEndpoint    types.String `tfsdk:"iam_endpoint"`
+	CCCEndpoint    types.String `tfsdk:"ccc_endpoint"`
+	TokenURL       types.String `tfsdk:"token_url"`
+	Scopes         types.Set    `tfsdk:"scopes"`
+	TimeoutSeconds types.Int64  `tfsdk:"timeout_seconds"`
+	MaxRetries     types.Int64  `tfsdk:"max_retries"`
+}
 
-func (p *HiiRetailIamProvider) Metadata(ctx context.Context, req provider.MetadataRequest, resp *provider.MetadataResponse) {
-	resp.TypeName = "hiiretail-iam"
+func (p *HiiRetailProvider) Metadata(ctx context.Context, req provider.MetadataRequest, resp *provider.MetadataResponse) {
+	resp.TypeName = "hiiretail"
 	resp.Version = p.version
 }
 
-func (p *HiiRetailIamProvider) Schema(ctx context.Context, req provider.SchemaRequest, resp *provider.SchemaResponse) {
-	resp.Schema = provider_hiiretail_iam.HiiretailIamProviderSchema(ctx)
+func (p *HiiRetailProvider) Schema(ctx context.Context, req provider.SchemaRequest, resp *provider.SchemaResponse) {
+	resp.Schema = schema.Schema{
+		Description: "The HiiRetail provider enables management of HiiRetail resources through Terraform.",
+		MarkdownDescription: "The HiiRetail provider enables management of HiiRetail resources through Terraform. " +
+			"It supports multiple services including IAM (Identity and Access Management) and CCC (Customer Care Center).",
+
+		Attributes: map[string]schema.Attribute{
+			"client_id": schema.StringAttribute{
+				Description:         "OAuth2 client ID for authentication. Can also be set via HIIRETAIL_CLIENT_ID environment variable.",
+				MarkdownDescription: "OAuth2 client ID for authentication. Can also be set via `HIIRETAIL_CLIENT_ID` environment variable.",
+				Optional:            true,
+				Sensitive:           true,
+			},
+			"client_secret": schema.StringAttribute{
+				Description:         "OAuth2 client secret for authentication. Can also be set via HIIRETAIL_CLIENT_SECRET environment variable.",
+				MarkdownDescription: "OAuth2 client secret for authentication. Can also be set via `HIIRETAIL_CLIENT_SECRET` environment variable.",
+				Optional:            true,
+				Sensitive:           true,
+			},
+			"tenant_id": schema.StringAttribute{
+				Description:         "Tenant ID for resources. Can also be set via HIIRETAIL_TENANT_ID environment variable.",
+				MarkdownDescription: "Tenant ID for resources. Can also be set via `HIIRETAIL_TENANT_ID` environment variable.",
+				Optional:            true,
+			},
+			"base_url": schema.StringAttribute{
+				Description:         "Base URL for the HiiRetail APIs. Can also be set via HIIRETAIL_BASE_URL environment variable.",
+				MarkdownDescription: "Base URL for the HiiRetail APIs. Can also be set via `HIIRETAIL_BASE_URL` environment variable.",
+				Optional:            true,
+				Validators: []validator.String{
+					validators.StringIsURL(),
+				},
+			},
+			"iam_endpoint": schema.StringAttribute{
+				Description:         "IAM service endpoint path. Defaults to '/iam/v1'.",
+				MarkdownDescription: "IAM service endpoint path. Defaults to `/iam/v1`.",
+				Optional:            true,
+			},
+			"ccc_endpoint": schema.StringAttribute{
+				Description:         "CCC service endpoint path. Defaults to '/ccc/v1'.",
+				MarkdownDescription: "CCC service endpoint path. Defaults to `/ccc/v1`.",
+				Optional:            true,
+			},
+			"token_url": schema.StringAttribute{
+				Description:         "OAuth2 token URL. Can also be set via HIIRETAIL_TOKEN_URL environment variable.",
+				MarkdownDescription: "OAuth2 token URL. Can also be set via `HIIRETAIL_TOKEN_URL` environment variable.",
+				Optional:            true,
+				Validators: []validator.String{
+					validators.StringIsURL(),
+				},
+			},
+			"scopes": schema.SetAttribute{
+				ElementType:         types.StringType,
+				Description:         "OAuth2 scopes to request. Defaults to ['iam:read', 'iam:write'].",
+				MarkdownDescription: "OAuth2 scopes to request. Defaults to `['iam:read', 'iam:write']`.",
+				Optional:            true,
+			},
+			"timeout_seconds": schema.Int64Attribute{
+				Description:         "Request timeout in seconds. Defaults to 30.",
+				MarkdownDescription: "Request timeout in seconds. Defaults to 30.",
+				Optional:            true,
+			},
+			"max_retries": schema.Int64Attribute{
+				Description:         "Maximum number of retries for failed requests. Defaults to 3.",
+				MarkdownDescription: "Maximum number of retries for failed requests. Defaults to 3.",
+				Optional:            true,
+			},
+		},
+	}
 }
 
-func (p *HiiRetailIamProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
-	var data HiiRetailIamProviderModel
+func (p *HiiRetailProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
+	var data HiiRetailProviderModel
 
 	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
 
@@ -58,116 +136,86 @@ func (p *HiiRetailIamProvider) Configure(ctx context.Context, req provider.Confi
 		return
 	}
 
-	// Validate configuration using the comprehensive validation system
-	validationResult := auth.ValidateAuthConfig(authConfig, auth.DefaultValidationRules())
-	if !validationResult.Valid {
-		for _, err := range validationResult.Errors {
-			resp.Diagnostics.AddError(
-				fmt.Sprintf("Configuration Error in %s", err.Field),
-				fmt.Sprintf("%s. %s", err.Message, err.Suggestion),
-			)
-		}
-		return
+	// Build client configuration with hardcoded URLs
+	clientConfig := &client.Config{
+		BaseURL:      "https://iam-api.retailsvc.com", // Hardcoded IAM API URL
+		IAMEndpoint:  data.IAMEndpoint.ValueString(),
+		CCCEndpoint:  data.CCCEndpoint.ValueString(),
+		Timeout:      time.Duration(data.TimeoutSeconds.ValueInt64()) * time.Second,
+		MaxRetries:   int(data.MaxRetries.ValueInt64()),
+		RetryWaitMin: 1 * time.Second,
+		RetryWaitMax: 30 * time.Second,
 	}
 
-	// Add warnings for configuration issues
-	for _, warning := range validationResult.Warnings {
-		resp.Diagnostics.AddWarning(
-			fmt.Sprintf("Configuration Warning for %s", warning.Field),
-			fmt.Sprintf("%s. %s", warning.Message, warning.Suggestion),
-		)
+	// Convert AuthClientConfig to auth.Config with hardcoded URLs
+	authConfigV2 := &auth.Config{
+		ClientID:         authConfig.ClientID,
+		ClientSecret:     authConfig.ClientSecret,
+		TenantID:         authConfig.TenantID,
+		AuthURL:          authConfig.TokenURL,             // Already set to hardcoded auth URL
+		APIURL:           "https://iam-api.retailsvc.com", // Hardcoded IAM API URL
+		Scopes:           authConfig.Scopes,
+		Timeout:          authConfig.Timeout,
+		MaxRetries:       authConfig.MaxRetries,
+		DisableDiscovery: authConfig.DisableDiscovery,
 	}
 
-	// Create OAuth2 authentication client
-	authClient, err := auth.NewAuthClient(authConfig)
+	// Create unified API client
+	apiClient, err := client.New(authConfigV2, clientConfig)
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"OAuth2 Authentication Setup Failed",
-			fmt.Sprintf("Failed to initialize OAuth2 authentication client: %s", err.Error()),
+			"Client Setup Failed",
+			fmt.Sprintf("Failed to initialize API client: %s", err.Error()),
 		)
 		return
 	}
 
-	// Validate authentication by attempting to acquire a token
-	if _, err := authClient.GetToken(ctx); err != nil {
-		authClient.Close() // Clean up resources
-		resp.Diagnostics.AddError(
-			"OAuth2 Authentication Failed",
-			fmt.Sprintf("Failed to authenticate with OAuth2 provider: %s", err.Error()),
-		)
-		return
-	}
-
-	// Create authenticated HTTP client
-	httpClient, err := authClient.HTTPClientWithRetry(ctx)
-	if err != nil {
-		authClient.Close() // Clean up resources
-		resp.Diagnostics.AddError(
-			"HTTP Client Setup Failed",
-			fmt.Sprintf("Failed to create authenticated HTTP client: %s", err.Error()),
-		)
-		return
-	}
-
-	// Create API client configuration
-	apiClient := &APIClient{
-		BaseURL:    resolveBaseURL(authConfig),
-		TenantID:   authConfig.TenantID,
-		HTTPClient: httpClient,
-		AuthClient: authClient,
-	}
-
+	// Make the client available to resources and data sources
 	resp.DataSourceData = apiClient
 	resp.ResourceData = apiClient
 }
 
-func (p *HiiRetailIamProvider) Resources(ctx context.Context) []func() resource.Resource {
+func (p *HiiRetailProvider) Resources(ctx context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
-		// T027: Register Group resource with provider
-		resource_iam_group.NewIamGroupResource,
-		// T001: Register Custom Role resource with provider
-		resource_iam_custom_role.NewIamCustomRoleResource,
-		// T014: Register Role Binding resource with provider
-		resource_iam_role_binding.NewIamRoleBindingResource,
+		// IAM resources
+		resources.NewGroupResource,
+		resources.NewCustomRoleResource,
+		resources.NewRoleBindingResource,
 	}
 }
 
-func (p *HiiRetailIamProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
-	return []func() datasource.DataSource{}
+func (p *HiiRetailProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
+	return []func() datasource.DataSource{
+		// IAM data sources
+		datasources.NewGroupsDataSource,
+		datasources.NewRolesDataSource,
+	}
 }
 
 func New(version string) func() provider.Provider {
 	return func() provider.Provider {
-		return &HiiRetailIamProvider{
+		return &HiiRetailProvider{
 			version: version,
 		}
 	}
 }
 
-// APIClient represents the configuration for making API calls
-type APIClient struct {
-	BaseURL    string
-	TenantID   string
-	HTTPClient *http.Client
-	AuthClient *auth.AuthClient
-}
-
 // buildAuthConfig creates an AuthClientConfig from provider configuration and environment variables
-func buildAuthConfig(ctx context.Context, data *HiiRetailIamProviderModel) (*auth.AuthClientConfig, diag.Diagnostics) {
+func buildAuthConfig(ctx context.Context, data *HiiRetailProviderModel) (*auth.AuthClientConfig, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	config := &auth.AuthClientConfig{}
 
 	// Get tenant ID from config or environment
-	if !data.TenantId.IsNull() && !data.TenantId.IsUnknown() {
-		config.TenantID = data.TenantId.ValueString()
+	if !data.TenantID.IsNull() && !data.TenantID.IsUnknown() {
+		config.TenantID = data.TenantID.ValueString()
 	} else {
 		config.TenantID = os.Getenv("HIIRETAIL_TENANT_ID")
 	}
 
 	// Get client ID from config or environment
-	if !data.ClientId.IsNull() && !data.ClientId.IsUnknown() {
-		config.ClientID = data.ClientId.ValueString()
+	if !data.ClientID.IsNull() && !data.ClientID.IsUnknown() {
+		config.ClientID = data.ClientID.ValueString()
 	} else {
 		config.ClientID = os.Getenv("HIIRETAIL_CLIENT_ID")
 	}
@@ -179,23 +227,8 @@ func buildAuthConfig(ctx context.Context, data *HiiRetailIamProviderModel) (*aut
 		config.ClientSecret = os.Getenv("HIIRETAIL_CLIENT_SECRET")
 	}
 
-	// Get base URL from config or environment
-	if !data.BaseUrl.IsNull() && !data.BaseUrl.IsUnknown() {
-		config.BaseURL = data.BaseUrl.ValueString()
-	} else {
-		baseURL := os.Getenv("HIIRETAIL_BASE_URL")
-		if baseURL == "" {
-			baseURL = "https://auth.retailsvc.com" // Default OAuth2 discovery endpoint
-		}
-		config.BaseURL = baseURL
-	}
-
-	// Get token URL from config or environment (optional)
-	if !data.TokenUrl.IsNull() && !data.TokenUrl.IsUnknown() {
-		config.TokenURL = data.TokenUrl.ValueString()
-	} else {
-		config.TokenURL = os.Getenv("HIIRETAIL_TOKEN_URL")
-	}
+	// Set hardcoded auth URL for HiiRetail
+	config.TokenURL = "https://auth.retailsvc.com/oauth2/token"
 
 	// Get scopes from config or default
 	if !data.Scopes.IsNull() && !data.Scopes.IsUnknown() {
@@ -211,50 +244,22 @@ func buildAuthConfig(ctx context.Context, data *HiiRetailIamProviderModel) (*aut
 		}
 	}
 
-	// Get timeout from config or environment
+	// Set default timeout and retries (using provider-level settings from client config)
 	if !data.TimeoutSeconds.IsNull() && !data.TimeoutSeconds.IsUnknown() {
 		config.Timeout = time.Duration(data.TimeoutSeconds.ValueInt64()) * time.Second
 	} else {
-		timeoutEnv := os.Getenv("HIIRETAIL_TIMEOUT_SECONDS")
-		if timeoutEnv != "" {
-			if timeoutSeconds, err := strconv.Atoi(timeoutEnv); err == nil {
-				config.Timeout = time.Duration(timeoutSeconds) * time.Second
-			}
-		}
-		if config.Timeout == 0 {
-			config.Timeout = 30 * time.Second // Default timeout
-		}
+		config.Timeout = 30 * time.Second // Default timeout
 	}
 
-	// Get max retries from config or environment
 	if !data.MaxRetries.IsNull() && !data.MaxRetries.IsUnknown() {
 		config.MaxRetries = int(data.MaxRetries.ValueInt64())
 	} else {
-		retriesEnv := os.Getenv("HIIRETAIL_MAX_RETRIES")
-		if retriesEnv != "" {
-			if maxRetries, err := strconv.Atoi(retriesEnv); err == nil {
-				config.MaxRetries = maxRetries
-			}
-		}
-		if config.MaxRetries == 0 {
-			config.MaxRetries = 3 // Default max retries
-		}
+		config.MaxRetries = 3 // Default max retries
 	}
 
-	// Get disable discovery from config or environment
-	if !data.DisableDiscovery.IsNull() && !data.DisableDiscovery.IsUnknown() {
-		config.DisableDiscovery = data.DisableDiscovery.ValueBool()
-	} else {
-		disableDiscoveryEnv := os.Getenv("HIIRETAIL_DISABLE_DISCOVERY")
-		config.DisableDiscovery = strings.ToLower(disableDiscoveryEnv) == "true"
-	}
-
-	// Get custom headers from config
-	if !data.CustomHeaders.IsNull() && !data.CustomHeaders.IsUnknown() {
-		headers := make(map[string]string)
-		diags.Append(data.CustomHeaders.ElementsAs(ctx, &headers, false)...)
-		config.CustomHeaders = headers
-	}
+	// Set default discovery and headers (not configurable in current model)
+	config.DisableDiscovery = false
+	config.CustomHeaders = make(map[string]string)
 
 	return config, diags
 }

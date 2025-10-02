@@ -6,7 +6,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 
-	"github.com/extenda/hiiretail-terraform-providers/iam/internal/provider/testutils"
+	"github.com/extenda/hiiretail-terraform-providers/hiiretail/internal/provider/testutils"
 )
 
 // Terraform acceptance tests for IAM Custom Role resource

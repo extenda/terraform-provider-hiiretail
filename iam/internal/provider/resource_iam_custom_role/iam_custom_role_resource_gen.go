@@ -5,6 +5,9 @@ package resource_iam_custom_role
 import (
 	"context"
 	"fmt"
+	"regexp"
+	"strings"
+
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -12,9 +15,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"github.com/hashicorp/terraform-plugin-go/tftypes"
-	"regexp"
-	"strings"
 
+	"github.com/extenda/hiiretail-terraform-providers/hiiretail/internal/validation"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 )
 
@@ -29,6 +31,7 @@ func IamCustomRoleResourceSchema(ctx context.Context) schema.Schema {
 				Computed: true,
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(3, 256),
+					validation.NewNameValidator("custom_role"),
 				},
 			},
 			"permissions": schema.ListNestedAttribute{

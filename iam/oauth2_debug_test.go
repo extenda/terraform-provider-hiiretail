@@ -11,7 +11,7 @@ import (
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/clientcredentials"
 
-	"github.com/extenda/hiiretail-terraform-providers/iam/internal/provider/testutils"
+	"github.com/extenda/hiiretail-terraform-providers/hiiretail/internal/provider/testutils"
 )
 
 func TestOAuth2Timeout(t *testing.T) {
