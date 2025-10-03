@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/extenda/hiiretail-terraform-providers/hiiretail/internal/provider/shared/client"
 )
@@ -108,12 +109,18 @@ func (s *Service) ListGroups(ctx context.Context, req *ListGroupsRequest) (*List
 		return nil, err
 	}
 
-	var result ListGroupsResponse
-	if err := json.Unmarshal(resp.Body, &result); err != nil {
+	var groups []Group
+	if err := json.Unmarshal(resp.Body, &groups); err != nil {
 		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
 
-	return &result, nil
+	// Wrap the groups array in the expected response structure
+	result := &ListGroupsResponse{
+		Groups: groups,
+		Total:  len(groups),
+	}
+
+	return result, nil
 }
 
 // GetGroup retrieves a specific IAM group by ID
@@ -402,42 +409,148 @@ func (s *Service) ListRoleBindings(ctx context.Context, filter string) ([]RoleBi
 }
 
 // GetRoleBinding retrieves a specific IAM role binding by name
+// Since role bindings are now stored as group role assignments, we need to
+// search through groups and their roles to find the binding
 func (s *Service) GetRoleBinding(ctx context.Context, name string) (*RoleBinding, error) {
-	path := fmt.Sprintf("bindings/%s", name)
-	resp, err := s.client.Get(ctx, path, nil)
+	// For now, we'll reconstruct the binding from the ID format: "groupId-roleId"
+	// This assumes the binding ID was set during creation
+	
+	// First, try to get all groups and search for role assignments
+	groupsResp, err := s.ListGroups(ctx, &ListGroupsRequest{})
 	if err != nil {
-		return nil, fmt.Errorf("failed to get role binding %s: %w", name, err)
+		return nil, fmt.Errorf("failed to list groups: %w", err)
 	}
 
-	if err := client.CheckResponse(resp); err != nil {
-		return nil, err
+	// Search through groups to find the role binding
+	for _, group := range groupsResp.Groups {
+		// Get roles for this group
+		path := fmt.Sprintf("../v2/tenants/%s/groups/%s/roles", s.tenantID, group.ID)
+		resp, err := s.client.Get(ctx, path, nil)
+		if err != nil {
+			continue // Skip this group if we can't get its roles
+		}
+
+		if err := client.CheckResponse(resp); err != nil {
+			continue // Skip this group if we can't get its roles
+		}
+
+		// Parse the response as a generic slice since we don't know the exact structure
+		var roles []map[string]interface{}
+		if err := json.Unmarshal(resp.Body, &roles); err != nil {
+			continue // Skip this group if we can't parse the roles
+		}
+
+		// Check if any role assignment matches our binding name/ID
+		for _, role := range roles {
+			roleID, ok := role["roleId"].(string)
+			if !ok {
+				continue
+			}
+			
+			bindingID := fmt.Sprintf("%s-%s", group.ID, roleID)
+			if bindingID == name {
+				// Found the binding, reconstruct it
+				// Determine if it's a custom role
+				rolePrefix := "roles/"
+				if isCustom, ok := role["isCustom"].(bool); ok && isCustom {
+					rolePrefix = "roles/custom."
+				}
+				
+				binding := &RoleBinding{
+					ID:        bindingID,
+					Name:      name,
+					Role:      fmt.Sprintf("%s%s", rolePrefix, roleID),
+					Members:   []string{fmt.Sprintf("group:%s", group.Name)},
+					Condition: "", // Role bindings don't have conditions in V2 API
+					CreatedAt: group.CreatedAt, // Use group creation time as fallback
+					UpdatedAt: group.UpdatedAt, // Use group update time as fallback
+				}
+				return binding, nil
+			}
+		}
 	}
 
-	var binding RoleBinding
-	if err := json.Unmarshal(resp.Body, &binding); err != nil {
-		return nil, fmt.Errorf("failed to decode response: %w", err)
+	// If we get here, the binding wasn't found - return a proper not found error
+	return nil, &client.Error{
+		StatusCode: 404,
+		Message:    fmt.Sprintf("role binding %s not found", name),
 	}
-
-	return &binding, nil
 }
 
-// CreateRoleBinding creates a new IAM role binding
+// CreateRoleBinding creates a new IAM role binding using V2 group role endpoints
 func (s *Service) CreateRoleBinding(ctx context.Context, binding *RoleBinding) (*RoleBinding, error) {
-	resp, err := s.client.Post(ctx, "bindings", binding)
+	// Extract group ID from members array (expected format: "group:groupName")
+	var groupID string
+	var groupName string
+	for _, member := range binding.Members {
+		if strings.HasPrefix(member, "group:") {
+			groupName = strings.TrimPrefix(member, "group:")
+			// Find the group by name to get its ID
+			groupsResp, err := s.ListGroups(ctx, &ListGroupsRequest{})
+			if err != nil {
+				return nil, fmt.Errorf("failed to list groups to find group '%s': %w", groupName, err)
+			}
+			for _, group := range groupsResp.Groups {
+				if group.Name == groupName {
+					groupID = group.ID
+					break
+				}
+			}
+			if groupID == "" {
+				return nil, fmt.Errorf("group '%s' not found", groupName)
+			}
+			break
+		}
+	}
+	
+	if groupID == "" {
+		return nil, fmt.Errorf("no group found in members array - role binding requires a group member")
+	}
+
+	// Parse role to extract roleId and determine if it's custom
+	roleId := binding.Role
+	isCustom := false
+	
+	// Handle "roles/custom.roleId" format from main.tf
+	if strings.HasPrefix(roleId, "roles/custom.") {
+		roleId = strings.TrimPrefix(roleId, "roles/custom.")
+		isCustom = true
+	} else if strings.HasPrefix(roleId, "roles/") {
+		roleId = strings.TrimPrefix(roleId, "roles/")
+		isCustom = false
+	}
+
+	// Create the proper CreateRoleBindingDto payload for V2 API
+	payload := map[string]interface{}{
+		"roleId":   roleId,
+		"isCustom": isCustom,
+		"bindings": binding.Members,
+	}
+
+	// Use V2 group role endpoint: POST /api/v2/tenants/{tenantId}/groups/{groupId}/roles
+	// We need to use the full path including /api/v2 since the client defaults to /api/v1
+	path := fmt.Sprintf("../v2/tenants/%s/groups/%s/roles", s.tenantID, groupID)
+	resp, err := s.client.Post(ctx, path, payload)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create role binding: %w", err)
+		return nil, fmt.Errorf("failed to create role binding for group %s: %w", groupID, err)
 	}
 
 	if err := client.CheckResponse(resp); err != nil {
 		return nil, err
 	}
 
-	var result RoleBinding
-	if err := json.Unmarshal(resp.Body, &result); err != nil {
-		return nil, fmt.Errorf("failed to decode response: %w", err)
+	// The V2 API may return the role assignment, but we construct our response
+	// to match the expected RoleBinding format
+	result := &RoleBinding{
+		ID:      fmt.Sprintf("%s-%s", groupID, roleId), // Create composite ID
+		Name:    binding.Name,
+		Role:    binding.Role,
+		Members: binding.Members,
+		// Only set Condition if it's not empty to maintain consistency with Terraform
+		Condition: binding.Condition,
 	}
 
-	return &result, nil
+	return result, nil
 }
 
 // UpdateRoleBinding updates an existing IAM role binding
