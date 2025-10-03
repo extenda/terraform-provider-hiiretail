@@ -40,13 +40,21 @@ resource "hiiretail_iam_custom_role" "test_custom_role" {
   name        = "TerraformTest"
   description = "Test custom role created via Terraform"
   
-  # Define permissions for the custom role
+  # Define permissions for the custom role - using standard IAM permissions
   permissions = [
     {
-      id = "iam.group.list"
+      id = "rec.reconciliations.approve"
       attributes = {}
     }
   ]
+}
+
+resource "hiiretail_iam_resource" "test_bu" {
+  id   = "bu:tf01"
+  name = "Terraform Store"
+  props = jsonencode({
+    type     = "business-unit"
+  })
 }
 
 resource "hiiretail_iam_role_binding" "test_role_binding" {
@@ -56,16 +64,28 @@ resource "hiiretail_iam_role_binding" "test_role_binding" {
   # Assign the custom role to the group  
   role = "roles/${hiiretail_iam_custom_role.test_custom_role.id}"
   
-  # Bind the role to the group (using group name as member)
+  # Use members array with the hiiretail_iam_resource reference (array of strings as requested)
   members = [
-    "group:${hiiretail_iam_group.test_group.name}"
+    hiiretail_iam_resource.test_bu.id
   ]
 }
 
-output "created_group_name" {
-  value = hiiretail_iam_group.test_group.name
+output "test_bu_resource" {
+  value = {
+    id        = hiiretail_iam_resource.test_bu.id
+    name      = hiiretail_iam_resource.test_bu.name
+    tenant_id = hiiretail_iam_resource.test_bu.tenant_id
+  }
 }
 
-output "role_binding_id" {
-  value = hiiretail_iam_role_binding.test_role_binding.id
+# output "test_department_resource" {
+#   value = {
+#     id        = hiiretail_iam_resource.test_department.id
+#     name      = hiiretail_iam_resource.test_department.name
+#     tenant_id = hiiretail_iam_resource.test_department.tenant_id
+#   }
+# }
+
+output "created_group_name" {
+  value = hiiretail_iam_group.test_group.name
 }
