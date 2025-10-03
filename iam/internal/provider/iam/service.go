@@ -409,68 +409,86 @@ func (s *Service) ListRoleBindings(ctx context.Context, filter string) ([]RoleBi
 }
 
 // GetRoleBinding retrieves a specific IAM role binding by name
-// Since role bindings are now stored as group role assignments, we need to
-// search through groups and their roles to find the binding
+// Since role bindings are stored as group role assignments, we parse the binding ID
+// (format: "groupId-roleId") to make direct API calls instead of searching all groups
 func (s *Service) GetRoleBinding(ctx context.Context, name string) (*RoleBinding, error) {
-	// For now, we'll reconstruct the binding from the ID format: "groupId-roleId"
-	// This assumes the binding ID was set during creation
+	// Parse the binding ID to extract groupId and roleId
+	// Expected format: "groupId-roleId" (e.g., "EYNaCiYX6WFmoPxXCGMf-custom.TerraformTestShayne")
+	parts := strings.Split(name, "-")
+	if len(parts) < 2 {
+		return nil, &client.Error{
+			StatusCode: 400,
+			Message:    fmt.Sprintf("invalid role binding ID format: %s", name),
+		}
+	}
 	
-	// First, try to get all groups and search for role assignments
-	groupsResp, err := s.ListGroups(ctx, &ListGroupsRequest{})
+	groupID := parts[0]
+	roleID := strings.Join(parts[1:], "-") // Handle role IDs that might contain hyphens
+	
+	// First get the group to get its name
+	group, err := s.GetGroup(ctx, groupID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list groups: %w", err)
+		if client.IsNotFoundError(err) {
+			return nil, &client.Error{
+				StatusCode: 404,
+				Message:    fmt.Sprintf("role binding %s not found (group not found)", name),
+			}
+		}
+		return nil, fmt.Errorf("failed to get group %s: %w", groupID, err)
+	}
+	
+	// Get roles for this specific group
+	path := fmt.Sprintf("../v2/tenants/%s/groups/%s/roles", s.tenantID, groupID)
+	resp, err := s.client.Get(ctx, path, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get roles for group %s: %w", groupID, err)
 	}
 
-	// Search through groups to find the role binding
-	for _, group := range groupsResp.Groups {
-		// Get roles for this group
-		path := fmt.Sprintf("../v2/tenants/%s/groups/%s/roles", s.tenantID, group.ID)
-		resp, err := s.client.Get(ctx, path, nil)
-		if err != nil {
-			continue // Skip this group if we can't get its roles
+	if err := client.CheckResponse(resp); err != nil {
+		if client.IsNotFoundError(err) {
+			return nil, &client.Error{
+				StatusCode: 404,
+				Message:    fmt.Sprintf("role binding %s not found", name),
+			}
 		}
+		return nil, err
+	}
 
-		if err := client.CheckResponse(resp); err != nil {
-			continue // Skip this group if we can't get its roles
+	// Parse the response as a generic slice
+	var roles []map[string]interface{}
+	if err := json.Unmarshal(resp.Body, &roles); err != nil {
+		return nil, fmt.Errorf("failed to parse roles response: %w", err)
+	}
+
+	// Look for the specific role assignment
+	for _, role := range roles {
+		currentRoleID, ok := role["roleId"].(string)
+		if !ok {
+			continue
 		}
-
-		// Parse the response as a generic slice since we don't know the exact structure
-		var roles []map[string]interface{}
-		if err := json.Unmarshal(resp.Body, &roles); err != nil {
-			continue // Skip this group if we can't parse the roles
-		}
-
-		// Check if any role assignment matches our binding name/ID
-		for _, role := range roles {
-			roleID, ok := role["roleId"].(string)
-			if !ok {
-				continue
+		
+		if currentRoleID == roleID {
+			// Found the role assignment, reconstruct the binding
+			// Determine if it's a custom role
+			rolePrefix := "roles/"
+			if isCustom, ok := role["isCustom"].(bool); ok && isCustom {
+				rolePrefix = "roles/custom."
 			}
 			
-			bindingID := fmt.Sprintf("%s-%s", group.ID, roleID)
-			if bindingID == name {
-				// Found the binding, reconstruct it
-				// Determine if it's a custom role
-				rolePrefix := "roles/"
-				if isCustom, ok := role["isCustom"].(bool); ok && isCustom {
-					rolePrefix = "roles/custom."
-				}
-				
-				binding := &RoleBinding{
-					ID:        bindingID,
-					Name:      name,
-					Role:      fmt.Sprintf("%s%s", rolePrefix, roleID),
-					Members:   []string{fmt.Sprintf("group:%s", group.Name)},
-					Condition: "", // Role bindings don't have conditions in V2 API
-					CreatedAt: group.CreatedAt, // Use group creation time as fallback
-					UpdatedAt: group.UpdatedAt, // Use group update time as fallback
-				}
-				return binding, nil
+			binding := &RoleBinding{
+				ID:        name,
+				Name:      name,
+				Role:      fmt.Sprintf("%s%s", rolePrefix, roleID),
+				Members:   []string{fmt.Sprintf("group:%s", group.Name)},
+				Condition: "", // Role bindings don't have conditions in V2 API
+				CreatedAt: group.CreatedAt, // Use group creation time as fallback
+				UpdatedAt: group.UpdatedAt, // Use group update time as fallback
 			}
+			return binding, nil
 		}
 	}
 
-	// If we get here, the binding wasn't found - return a proper not found error
+	// Role assignment not found for this group
 	return nil, &client.Error{
 		StatusCode: 404,
 		Message:    fmt.Sprintf("role binding %s not found", name),
