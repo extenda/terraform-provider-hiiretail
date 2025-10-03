@@ -24,6 +24,11 @@ func NewService(apiClient *client.Client, tenantID string) *Service {
 	}
 }
 
+// TenantID returns the tenant ID for this service
+func (s *Service) TenantID() string {
+	return s.tenantID
+}
+
 // Group represents an IAM group
 type Group struct {
 	ID          string   `json:"id"`
@@ -786,4 +791,121 @@ func (s *Service) DeleteRoleBinding(ctx context.Context, name string) error {
 	}
 
 	return nil
+}
+
+// Resource represents an IAM resource
+type Resource struct {
+	ID    string      `json:"id"`
+	Name  string      `json:"name"`
+	Props interface{} `json:"props,omitempty"`
+}
+
+// SetResourceDto represents the request body for SetResource API
+type SetResourceDto struct {
+	Name  string      `json:"name"`
+	Props interface{} `json:"props,omitempty"`
+}
+
+// SetResource creates or updates an IAM resource using PUT endpoint
+func (s *Service) SetResource(ctx context.Context, id string, dto *SetResourceDto) (*Resource, error) {
+	path := fmt.Sprintf("tenants/%s/resources/%s", s.tenantID, id)
+
+	resp, err := s.client.Put(ctx, path, dto)
+	if err != nil {
+		return nil, fmt.Errorf("failed to set resource %s: %w", id, err)
+	}
+
+	if err := client.CheckResponse(resp); err != nil {
+		return nil, err
+	}
+
+	var result Resource
+	if err := json.Unmarshal(resp.Body, &result); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return &result, nil
+}
+
+// GetResource retrieves a specific IAM resource by ID
+func (s *Service) GetResource(ctx context.Context, id string) (*Resource, error) {
+	path := fmt.Sprintf("tenants/%s/resources/%s", s.tenantID, id)
+	resp, err := s.client.Get(ctx, path, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get resource %s: %w", id, err)
+	}
+
+	if err := client.CheckResponse(resp); err != nil {
+		return nil, err
+	}
+
+	var resource Resource
+	if err := json.Unmarshal(resp.Body, &resource); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return &resource, nil
+}
+
+// DeleteResource deletes an IAM resource
+func (s *Service) DeleteResource(ctx context.Context, id string) error {
+	path := fmt.Sprintf("tenants/%s/resources/%s", s.tenantID, id)
+	resp, err := s.client.Delete(ctx, path)
+	if err != nil {
+		return fmt.Errorf("failed to delete resource %s: %w", id, err)
+	}
+
+	if err := client.CheckResponse(resp); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// GetResourcesRequest represents a request to list resources
+type GetResourcesRequest struct {
+	Permission string `json:"permission,omitempty"`
+	Type       string `json:"type,omitempty"`
+}
+
+// GetResourcesResponse represents a response from listing resources
+type GetResourcesResponse struct {
+	Resources []Resource `json:"resources"`
+	Total     int        `json:"total"`
+}
+
+// GetResources retrieves a list of IAM resources
+func (s *Service) GetResources(ctx context.Context, req *GetResourcesRequest) (*GetResourcesResponse, error) {
+	query := make(map[string]string)
+	if req != nil {
+		if req.Permission != "" {
+			query["permission"] = req.Permission
+		}
+		if req.Type != "" {
+			query["type"] = req.Type
+		}
+	}
+
+	path := fmt.Sprintf("tenants/%s/resources", s.tenantID)
+	resp, err := s.client.Get(ctx, path, query)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list resources: %w", err)
+	}
+
+	if err := client.CheckResponse(resp); err != nil {
+		return nil, err
+	}
+
+	var resources []Resource
+	if err := json.Unmarshal(resp.Body, &resources); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	// Wrap the resources array in the expected response structure
+	result := &GetResourcesResponse{
+		Resources: resources,
+		Total:     len(resources),
+	}
+
+	return result, nil
 }
