@@ -75,6 +75,9 @@ func (r *RoleBindingResource) Schema(ctx context.Context, req resource.SchemaReq
 					validators.IAMResourceName(),
 					validators.StringNoLeadingTrailingSpaces(),
 				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"role": schema.StringAttribute{
 				Description:         "The role to be granted (e.g., 'roles/iam.viewer', 'roles/custom.developer').",
@@ -180,7 +183,8 @@ func (r *RoleBindingResource) Create(ctx context.Context, req resource.CreateReq
 
 	// Map API response back to resource model
 	data.ID = types.StringValue(createdBinding.ID)
-	data.Name = types.StringValue(createdBinding.Name)
+	// Preserve the configured name instead of using the API response
+	// Note: We explicitly DO NOT set data.Name here to preserve the configured value
 	data.Role = types.StringValue(createdBinding.Role)
 	// Set condition properly - use null if empty to maintain Terraform consistency
 	if createdBinding.Condition == "" {
@@ -219,8 +223,11 @@ func (r *RoleBindingResource) Read(ctx context.Context, req resource.ReadRequest
 		return
 	}
 
+	fmt.Printf("=== DEBUG Read METHOD START: ID=%s ===\n", data.ID.ValueString())
+	fmt.Printf("CRITICAL: This debug output should appear if Read method is called\n")
+
 	// Get role binding from API
-	binding, err := r.iamService.GetRoleBinding(ctx, data.Name.ValueString())
+	binding, err := r.iamService.GetRoleBinding(ctx, data.ID.ValueString())
 	if err != nil {
 		if client.IsNotFoundError(err) {
 			// Role binding no longer exists
@@ -229,14 +236,16 @@ func (r *RoleBindingResource) Read(ctx context.Context, req resource.ReadRequest
 		}
 		resp.Diagnostics.AddError(
 			"Error Reading IAM Role Binding",
-			"Could not read role binding "+data.Name.ValueString()+": "+err.Error(),
+			"Could not read role binding "+data.ID.ValueString()+": "+err.Error(),
 		)
 		return
 	}
 
 	// Map API response to resource model
 	data.ID = types.StringValue(binding.ID)
-	data.Name = types.StringValue(binding.Name)
+	// NEVER set name - always preserve the configured name from Terraform
+	fmt.Printf("DEBUG Read: NOT setting data.Name at all, preserving configured value: %s\n", data.Name.ValueString())
+	// NOTE: data.Name is intentionally NOT set here to preserve the configuration value
 	data.Role = types.StringValue(binding.Role)
 	// Set condition properly - use null if empty to maintain Terraform consistency
 	if binding.Condition == "" {
@@ -255,8 +264,16 @@ func (r *RoleBindingResource) Read(ctx context.Context, req resource.ReadRequest
 		data.Members = types.SetValueMust(types.StringType, []attr.Value{})
 	}
 
-	data.CreatedAt = types.StringValue(binding.CreatedAt)
-	data.UpdatedAt = types.StringValue(binding.UpdatedAt)
+	// Handle timestamps - if API doesn't return them, preserve existing ones or use empty
+	if binding.CreatedAt != "" {
+		data.CreatedAt = types.StringValue(binding.CreatedAt)
+	}
+	// If API doesn't provide CreatedAt, keep the current value (don't override)
+	
+	if binding.UpdatedAt != "" {
+		data.UpdatedAt = types.StringValue(binding.UpdatedAt)
+	}
+	// If API doesn't provide UpdatedAt, keep the current value (don't override)
 
 	// Save updated data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -291,7 +308,7 @@ func (r *RoleBindingResource) Update(ctx context.Context, req resource.UpdateReq
 	}
 
 	// Update the role binding via API
-	updatedBinding, err := r.iamService.UpdateRoleBinding(ctx, data.Name.ValueString(), binding)
+	updatedBinding, err := r.iamService.UpdateRoleBinding(ctx, data.ID.ValueString(), binding)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error Updating IAM Role Binding",
@@ -319,6 +336,7 @@ func (r *RoleBindingResource) Update(ctx context.Context, req resource.UpdateReq
 		data.Members = types.SetValueMust(types.StringType, []attr.Value{})
 	}
 
+	data.CreatedAt = types.StringValue(updatedBinding.CreatedAt)
 	data.UpdatedAt = types.StringValue(updatedBinding.UpdatedAt)
 
 	// Save updated data into Terraform state
@@ -336,7 +354,7 @@ func (r *RoleBindingResource) Delete(ctx context.Context, req resource.DeleteReq
 	}
 
 	// Delete the role binding via API
-	err := r.iamService.DeleteRoleBinding(ctx, data.Name.ValueString())
+	err := r.iamService.DeleteRoleBinding(ctx, data.ID.ValueString())
 	if err != nil {
 		if client.IsNotFoundError(err) {
 			// Role binding already deleted, nothing to do

@@ -131,6 +131,10 @@ func (p *HiiRetailProvider) Schema(ctx context.Context, req provider.SchemaReque
 func (p *HiiRetailProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
 	var data HiiRetailProviderModel
 
+	// Build verification marker - this proves the binary is active
+	// This should be updated by the build script with a unique ID
+	fmt.Printf("[BUILD_VERIFICATION] HiiRetail Provider binary is active - build: PLACEHOLDER_BUILD_ID\n")
+
 	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
 
 	if resp.Diagnostics.HasError() {
@@ -260,7 +264,12 @@ func buildAuthConfig(ctx context.Context, data *HiiRetailProviderModel) (*auth.A
 		if scopesEnv != "" {
 			config.Scopes = strings.Split(scopesEnv, ",")
 		} else {
-			config.Scopes = []string{"iam:read", "iam:write"} // Default scopes
+			config.Scopes = []string{
+				"IAM:create:roles", "IAM:read:roles", "IAM:update:roles", "IAM:delete:roles",
+				"IAM:create:groups", "IAM:read:groups", "IAM:update:groups", "IAM:delete:groups",
+				"IAM:create:role_bindings", "IAM:read:role_bindings", "IAM:update:role_bindings", "IAM:delete:role_bindings",
+				"iam.group.list-roles", // Specific permission for V2 GET /api/v2/tenants/{tenantId}/groups/{id}/roles
+			} // Default scopes with granular IAM permissions
 		}
 	}
 
