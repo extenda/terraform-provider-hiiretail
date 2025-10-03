@@ -1,0 +1,122 @@
+#!/bin/bash
+
+# Makefile-style commands for HiiRetail Terraform Provider development
+# Usage: ./dev <command>
+
+set -e
+
+COMMAND="${1:-help}"
+
+case $COMMAND in
+    "build")
+        echo "🔨 Building provider with verification..."
+        ./scripts/build-and-verify.sh
+        ;;
+        
+    "test")
+        DEBUG_MARKER="${2:-BUILD_VERIFICATION}"
+        TERRAFORM_CMD="${3:-terraform plan}"
+        echo "🧪 Testing with debug verification..."
+        ./scripts/debug-verify.sh "$DEBUG_MARKER" $TERRAFORM_CMD
+        ;;
+        
+    "clean")
+        echo "🧹 Cleaning build artifacts..."
+        rm -f terraform-provider-hiiretail
+        rm -f .last-build-marker
+        rm -rf .terraform/
+        echo "✅ Cleaned!"
+        ;;
+        
+    "rebuild")
+        echo "🔄 Clean rebuild..."
+        ./dev clean
+        ./dev build
+        ;;
+        
+    "verify")
+        echo "🔍 Verifying current build..."
+        if [ ! -f "terraform-provider-hiiretail" ]; then
+            echo "❌ No binary found. Run './dev build' first."
+            exit 1
+        fi
+        
+        echo "📅 Binary timestamp: $(ls -la terraform-provider-hiiretail | awk '{print $6, $7, $8}')"
+        
+        if [ -f ".last-build-marker" ]; then
+            source ".last-build-marker"
+            echo "🏷️  Build ID: $BUILD_ID"
+            echo "⏰ Build time: $(date -r $BUILD_TIME)"
+            echo "💾 Binary size: $BINARY_SIZE bytes"
+        else
+            echo "⚠️  No build marker found. Run './dev build' to create one."
+        fi
+        ;;
+        
+    "plan")
+        echo "📋 Running terraform plan with debug verification..."
+        ./scripts/debug-verify.sh "BUILD_VERIFICATION" terraform plan
+        ;;
+        
+    "apply")  
+        echo "🚀 Running terraform apply with debug verification..."
+        ./scripts/debug-verify.sh "BUILD_VERIFICATION" terraform apply
+        ;;
+        
+    "status")
+        echo "📊 Development status check..."
+        echo ""
+        echo "📁 Project: HiiRetail Terraform Provider"
+        echo "📍 Directory: $(pwd)"
+        echo ""
+        
+        if [ -f "terraform-provider-hiiretail" ]; then
+            echo "✅ Binary exists: $(ls -la terraform-provider-hiiretail | awk '{print $6, $7, $8}')"
+        else
+            echo "❌ Binary missing"
+        fi
+        
+        if [ -f ".last-build-marker" ]; then
+            source ".last-build-marker"
+            echo "✅ Build marker: $BUILD_ID ($(date -r $BUILD_TIME))"
+        else
+            echo "❌ Build marker missing"
+        fi
+        
+        if [ -f "main.tf" ]; then
+            echo "✅ Terraform config present"
+        else
+            echo "⚠️  No main.tf found"
+        fi
+        
+        echo ""
+        echo "💡 Next steps:"
+        echo "   ./dev build    - Build provider"
+        echo "   ./dev plan     - Test with terraform plan"
+        echo "   ./dev status   - Check development status"
+        ;;
+        
+    "help"|*)
+        echo "🛠️  HiiRetail Terraform Provider Development Helper"
+        echo ""
+        echo "Usage: ./dev <command>"
+        echo ""
+        echo "Commands:"
+        echo "  build              Build provider with verification"
+        echo "  test [marker] [cmd] Test with debug verification (default: terraform plan)"
+        echo "  clean              Clean build artifacts"  
+        echo "  rebuild            Clean + build"
+        echo "  verify             Check current build status"
+        echo "  plan               Run terraform plan with verification"
+        echo "  apply              Run terraform apply with verification"
+        echo "  status             Show development status"
+        echo "  help               Show this help"
+        echo ""
+        echo "Examples:"
+        echo "  ./dev build"
+        echo "  ./dev test 'DEBUG_READ' terraform plan"
+        echo "  ./dev rebuild"
+        echo ""
+        echo "📖 See DEV_BEST_PRACTICES.md for detailed guidance"
+        ;;
+esac
