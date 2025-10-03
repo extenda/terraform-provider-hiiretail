@@ -1,0 +1,88 @@
+# Binaries and executables
+terraform-provider-*
+hiiretail
+iam
+demo/demo
+demo/oauth2-demo
+
+# Terraform state files
+terraform.tfstate
+terraform.tfstate.backup
+terraform.tfstate.*.backup
+*.tfstate
+*.tfstate.*
+
+# Terraform plan files
+*.tfplan
+*.tfplan.*
+
+# Variable files that may contain sensitive data
+terraform.tfvars
+*.auto.tfvars
+*.auto.tfvars.json
+secrets.tfvars
+
+# Terraform configuration override files
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Terraform temporary files
+.terraform/
+.terraform.*
+
+# Debug and temporary files
+*.log
+*.txt
+*.debug
+full_debug.txt
+plan_debug.txt
+plan_output.txt
+
+# Backup files
+*.backup
+*.bak
+*.tmp
+*~
+
+# Test configuration backups
+*.tf.backup
+comprehensive_test.tf.backup
+simple_test.tf.backup
+test-group.tf.backup
+
+# Generated files
+.last-build-marker
+provider_code_spec.bak
+provider_code_spec.json
+
+# Editor and IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Go related
+*.test
+*.prof
+coverage.out
+
+# Authentication and config files that might contain sensitive data
+.terraformrc
+
+# Test directories that might contain temporary data
+test_auth_dir/
+
+# Documentation that gets regenerated
+corrected-terraformrc-example.txt
