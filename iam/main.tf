@@ -36,8 +36,8 @@ resource "hiiretail_iam_group" "test_group" {
 }
 
 resource "hiiretail_iam_custom_role" "test_custom_role" {
-  id          = "custom.TerraformTestShayne"
-  name        = "TerraformTestShayne"
+  id          = "custom.TerraformTest"
+  name        = "TerraformTest"
   description = "Test custom role created via Terraform"
   
   # Define permissions for the custom role
@@ -53,8 +53,8 @@ resource "hiiretail_iam_role_binding" "test_role_binding" {
   # Name for the role binding
   name = "test-role-binding-shayne"
   
-  # Assign the custom role to the group
-  role = "roles/custom.${hiiretail_iam_custom_role.test_custom_role.id}"
+  # Assign the custom role to the group  
+  role = "roles/${hiiretail_iam_custom_role.test_custom_role.id}"
   
   # Bind the role to the group (using group name as member)
   members = [

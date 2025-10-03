@@ -1,0 +1,183 @@
+2025-10-03T13:24:38.827+0200 [INFO]  Terraform version: 1.4.7
+2025-10-03T13:24:38.827+0200 [DEBUG] using github.com/hashicorp/go-tfe v1.21.0
+2025-10-03T13:24:38.827+0200 [DEBUG] using github.com/hashicorp/hcl/v2 v2.16.2
+2025-10-03T13:24:38.827+0200 [DEBUG] using github.com/hashicorp/terraform-config-inspect v0.0.0-20210209133302-4fd17a0faac2
+2025-10-03T13:24:38.827+0200 [DEBUG] using github.com/hashicorp/terraform-svchost v0.1.0
+2025-10-03T13:24:38.827+0200 [DEBUG] using github.com/zclconf/go-cty v1.12.1
+2025-10-03T13:24:38.827+0200 [INFO]  Go runtime version: go1.19.6
+2025-10-03T13:24:38.827+0200 [INFO]  CLI args: []string{"/usr/local/Cellar/tfenv/2.2.3/versions/1.4.7/terraform", "plan"}
+2025-10-03T13:24:38.827+0200 [DEBUG] Attempting to open CLI config file: /Users/shayne/.terraformrc
+2025-10-03T13:24:38.828+0200 [INFO]  Loading CLI configuration from /Users/shayne/.terraformrc
+2025-10-03T13:24:38.830+0200 [DEBUG] checking for credentials in "/Users/shayne/.terraform.d/plugins"
+2025-10-03T13:24:38.830+0200 [DEBUG] Explicit provider installation configuration is set
+2025-10-03T13:24:38.832+0200 [INFO]  CLI command args: []string{"plan"}
+2025-10-03T13:24:38.849+0200 [DEBUG] New state was assigned lineage "00499c3f-a955-8797-7a87-a866ac1ec8c8"
+2025-10-03T13:24:38.849+0200 [DEBUG] Provider registry.terraform.io/extenda/hiiretail is overridden by dev_overrides
+2025-10-03T13:24:38.849+0200 [DEBUG] Provider registry.terraform.io/extenda/hiiretail is overridden to load from /Users/shayne/repos/clients/extenda/hiiretail-terraform-providers/iam
+2025-10-03T13:24:38.850+0200 [DEBUG] checking for provisioner in "."
+2025-10-03T13:24:38.850+0200 [DEBUG] checking for provisioner in "/usr/local/Cellar/tfenv/2.2.3/versions/1.4.7"
+2025-10-03T13:24:38.850+0200 [DEBUG] checking for provisioner in "/Users/shayne/.terraform.d/plugins"
+2025-10-03T13:24:38.852+0200 [DEBUG] Provider registry.terraform.io/extenda/hiiretail is overridden by dev_overrides
+[33m╷[0m[0m
+[33m│[0m [0m[1m[33mWarning: [0m[0m[1mProvider development overrides are in effect[0m
+[33m│[0m [0m
+[33m│[0m [0m[0mThe following provider development overrides are set in the CLI
+[33m│[0m [0mconfiguration:
+[33m│[0m [0m - extenda/hiiretail in /Users/shayne/repos/clients/extenda/hiiretail-terraform-providers/iam
+[33m│[0m [0m
+[33m│[0m [0mThe behavior may therefore not match any released version of the provider
+[33m│[0m [0mand applying changes may cause the state to become incompatible with
+[33m│[0m [0mpublished releases.
+[33m╵[0m[0m
+2025-10-03T13:24:38.854+0200 [INFO]  backend/local: starting Plan operation
+2025-10-03T13:24:38.866+0200 [DEBUG] Config.VerifyDependencySelections: skipping registry.terraform.io/extenda/hiiretail because it's overridden by a special configuration setting
+2025-10-03T13:24:38.867+0200 [DEBUG] created provider logger: level=debug
+2025-10-03T13:24:38.867+0200 [INFO]  provider: configuring client automatic mTLS
+2025-10-03T13:24:38.894+0200 [DEBUG] provider: starting plugin: path=/Users/shayne/repos/clients/extenda/hiiretail-terraform-providers/iam/terraform-provider-hiiretail args=[/Users/shayne/repos/clients/extenda/hiiretail-terraform-providers/iam/terraform-provider-hiiretail]
+2025-10-03T13:24:38.903+0200 [DEBUG] provider: plugin started: path=/Users/shayne/repos/clients/extenda/hiiretail-terraform-providers/iam/terraform-provider-hiiretail pid=15544
+2025-10-03T13:24:38.904+0200 [DEBUG] provider: waiting for RPC address: path=/Users/shayne/repos/clients/extenda/hiiretail-terraform-providers/iam/terraform-provider-hiiretail
+2025-10-03T13:24:38.982+0200 [INFO]  provider.terraform-provider-hiiretail: configuring server automatic mTLS: timestamp=2025-10-03T13:24:38.978+0200
+2025-10-03T13:24:38.999+0200 [DEBUG] provider.terraform-provider-hiiretail: plugin address: address=/var/folders/zj/m1vyglc140b4zswb1fgnfvtm0000gn/T/plugin2434846885 network=unix timestamp=2025-10-03T13:24:38.999+0200
+2025-10-03T13:24:38.999+0200 [DEBUG] provider: using plugin: version=6
+2025-10-03T13:24:39.046+0200 [DEBUG] No provider meta schema returned
+2025-10-03T13:24:39.049+0200 [DEBUG] provider.stdio: received EOF, stopping recv loop: err="rpc error: code = Unavailable desc = error reading from server: EOF"
+2025-10-03T13:24:39.052+0200 [DEBUG] provider: plugin process exited: path=/Users/shayne/repos/clients/extenda/hiiretail-terraform-providers/iam/terraform-provider-hiiretail pid=15544
+2025-10-03T13:24:39.062+0200 [DEBUG] provider: plugin exited
+2025-10-03T13:24:39.064+0200 [DEBUG] Building and walking validate graph
+2025-10-03T13:24:39.066+0200 [DEBUG] ProviderTransformer: "hiiretail_iam_group.test_group" (*terraform.NodeValidatableResource) needs provider["registry.terraform.io/extenda/hiiretail"]
+2025-10-03T13:24:39.066+0200 [DEBUG] ProviderTransformer: "hiiretail_iam_custom_role.test_custom_role" (*terraform.NodeValidatableResource) needs provider["registry.terraform.io/extenda/hiiretail"]
+2025-10-03T13:24:39.066+0200 [DEBUG] ProviderTransformer: "hiiretail_iam_role_binding.test_role_binding" (*terraform.NodeValidatableResource) needs provider["registry.terraform.io/extenda/hiiretail"]
+2025-10-03T13:24:39.066+0200 [DEBUG] ReferenceTransformer: "var.tenant_id" references: []
+2025-10-03T13:24:39.066+0200 [DEBUG] ReferenceTransformer: "output.created_group_name (expand)" references: [hiiretail_iam_group.test_group]
+2025-10-03T13:24:39.067+0200 [DEBUG] ReferenceTransformer: "provider[\"registry.terraform.io/extenda/hiiretail\"]" references: [var.client_id var.client_secret var.tenant_id]
+2025-10-03T13:24:39.067+0200 [DEBUG] ReferenceTransformer: "var.client_id" references: []
+2025-10-03T13:24:39.067+0200 [DEBUG] ReferenceTransformer: "var.client_secret" references: []
+2025-10-03T13:24:39.067+0200 [DEBUG] ReferenceTransformer: "hiiretail_iam_role_binding.test_role_binding" references: [hiiretail_iam_group.test_group hiiretail_iam_custom_role.test_custom_role]
+2025-10-03T13:24:39.067+0200 [DEBUG] ReferenceTransformer: "output.role_binding_id (expand)" references: [hiiretail_iam_role_binding.test_role_binding]
+2025-10-03T13:24:39.067+0200 [DEBUG] ReferenceTransformer: "hiiretail_iam_group.test_group" references: []
+2025-10-03T13:24:39.067+0200 [DEBUG] ReferenceTransformer: "hiiretail_iam_custom_role.test_custom_role" references: []
+2025-10-03T13:24:39.067+0200 [DEBUG] Starting graph walk: walkValidate
+2025-10-03T13:24:39.072+0200 [DEBUG] created provider logger: level=debug
+2025-10-03T13:24:39.072+0200 [INFO]  provider: configuring client automatic mTLS
+2025-10-03T13:24:39.081+0200 [DEBUG] provider: starting plugin: path=/Users/shayne/repos/clients/extenda/hiiretail-terraform-providers/iam/terraform-provider-hiiretail args=[/Users/shayne/repos/clients/extenda/hiiretail-terraform-providers/iam/terraform-provider-hiiretail]
+2025-10-03T13:24:39.088+0200 [DEBUG] provider: plugin started: path=/Users/shayne/repos/clients/extenda/hiiretail-terraform-providers/iam/terraform-provider-hiiretail pid=15547
+2025-10-03T13:24:39.088+0200 [DEBUG] provider: waiting for RPC address: path=/Users/shayne/repos/clients/extenda/hiiretail-terraform-providers/iam/terraform-provider-hiiretail
+2025-10-03T13:24:39.112+0200 [INFO]  provider.terraform-provider-hiiretail: configuring server automatic mTLS: timestamp=2025-10-03T13:24:39.111+0200
+2025-10-03T13:24:39.124+0200 [DEBUG] provider: using plugin: version=6
+2025-10-03T13:24:39.124+0200 [DEBUG] provider.terraform-provider-hiiretail: plugin address: address=/var/folders/zj/m1vyglc140b4zswb1fgnfvtm0000gn/T/plugin791766845 network=unix timestamp=2025-10-03T13:24:39.124+0200
+2025-10-03T13:24:39.147+0200 [DEBUG] No provider meta schema returned
+2025-10-03T13:24:39.157+0200 [DEBUG] skipping FixUpBlockAttrs
+2025-10-03T13:24:39.169+0200 [DEBUG] provider.stdio: received EOF, stopping recv loop: err="rpc error: code = Unavailable desc = error reading from server: EOF"
+2025-10-03T13:24:39.171+0200 [DEBUG] provider: plugin process exited: path=/Users/shayne/repos/clients/extenda/hiiretail-terraform-providers/iam/terraform-provider-hiiretail pid=15547
+2025-10-03T13:24:39.179+0200 [DEBUG] provider: plugin exited
+2025-10-03T13:24:39.181+0200 [INFO]  backend/local: plan calling Plan
+2025-10-03T13:24:39.188+0200 [DEBUG] Building and walking plan graph for NormalMode
+2025-10-03T13:24:39.190+0200 [DEBUG] ProviderTransformer: "hiiretail_iam_group.test_group (expand)" (*terraform.nodeExpandPlannableResource) needs provider["registry.terraform.io/extenda/hiiretail"]
+2025-10-03T13:24:39.194+0200 [DEBUG] ProviderTransformer: "hiiretail_iam_role_binding.test_role_binding (expand)" (*terraform.nodeExpandPlannableResource) needs provider["registry.terraform.io/extenda/hiiretail"]
+2025-10-03T13:24:39.194+0200 [DEBUG] ProviderTransformer: "hiiretail_iam_custom_role.test_custom_role (expand)" (*terraform.nodeExpandPlannableResource) needs provider["registry.terraform.io/extenda/hiiretail"]
+2025-10-03T13:24:39.194+0200 [DEBUG] ReferenceTransformer: "output.created_group_name (expand)" references: [hiiretail_iam_group.test_group (expand)]
+2025-10-03T13:24:39.194+0200 [DEBUG] ReferenceTransformer: "provider[\"registry.terraform.io/extenda/hiiretail\"]" references: [var.client_id var.client_secret var.tenant_id]
+2025-10-03T13:24:39.194+0200 [DEBUG] ReferenceTransformer: "hiiretail_iam_role_binding.test_role_binding (expand)" references: [hiiretail_iam_custom_role.test_custom_role (expand) hiiretail_iam_group.test_group (expand)]
+2025-10-03T13:24:39.194+0200 [DEBUG] ReferenceTransformer: "hiiretail_iam_custom_role.test_custom_role (expand)" references: []
+2025-10-03T13:24:39.194+0200 [DEBUG] ReferenceTransformer: "var.client_id" references: []
+2025-10-03T13:24:39.194+0200 [DEBUG] ReferenceTransformer: "output.role_binding_id (expand)" references: [hiiretail_iam_role_binding.test_role_binding (expand)]
+2025-10-03T13:24:39.194+0200 [DEBUG] ReferenceTransformer: "hiiretail_iam_group.test_group (expand)" references: []
+2025-10-03T13:24:39.195+0200 [DEBUG] ReferenceTransformer: "var.client_secret" references: []
+2025-10-03T13:24:39.195+0200 [DEBUG] ReferenceTransformer: "var.tenant_id" references: []
+2025-10-03T13:24:39.195+0200 [DEBUG] Starting graph walk: walkPlan
+2025-10-03T13:24:39.196+0200 [DEBUG] created provider logger: level=debug
+2025-10-03T13:24:39.196+0200 [INFO]  provider: configuring client automatic mTLS
+2025-10-03T13:24:39.204+0200 [DEBUG] provider: starting plugin: path=/Users/shayne/repos/clients/extenda/hiiretail-terraform-providers/iam/terraform-provider-hiiretail args=[/Users/shayne/repos/clients/extenda/hiiretail-terraform-providers/iam/terraform-provider-hiiretail]
+2025-10-03T13:24:39.212+0200 [DEBUG] provider: plugin started: path=/Users/shayne/repos/clients/extenda/hiiretail-terraform-providers/iam/terraform-provider-hiiretail pid=15549
+2025-10-03T13:24:39.212+0200 [DEBUG] provider: waiting for RPC address: path=/Users/shayne/repos/clients/extenda/hiiretail-terraform-providers/iam/terraform-provider-hiiretail
+2025-10-03T13:24:39.240+0200 [INFO]  provider.terraform-provider-hiiretail: configuring server automatic mTLS: timestamp=2025-10-03T13:24:39.240+0200
+2025-10-03T13:24:39.255+0200 [DEBUG] provider.terraform-provider-hiiretail: plugin address: address=/var/folders/zj/m1vyglc140b4zswb1fgnfvtm0000gn/T/plugin1514022204 network=unix timestamp=2025-10-03T13:24:39.255+0200
+2025-10-03T13:24:39.255+0200 [DEBUG] provider: using plugin: version=6
+2025-10-03T13:24:39.280+0200 [DEBUG] No provider meta schema returned
+2025-10-03T13:24:39.642+0200 [DEBUG] ReferenceTransformer: "hiiretail_iam_group.test_group" references: []
+2025-10-03T13:24:39.666+0200 [DEBUG] ReferenceTransformer: "hiiretail_iam_custom_role.test_custom_role" references: []
+[0m[1mhiiretail_iam_group.test_group: Refreshing state... [id=EYNaCiYX6WFmoPxXCGMf][0m
+[0m[1mhiiretail_iam_custom_role.test_custom_role: Refreshing state... [id=custom.TerraformTest][0m
+2025-10-03T13:24:39.698+0200 [INFO]  provider.terraform-provider-hiiretail: Configured IAM Custom Role Resource: tf_provider_addr=registry.terraform.io/extenda/hiiretail tf_req_id=e61df407-5623-8619-628e-a97261919caf @caller=/Users/shayne/repos/clients/extenda/hiiretail-terraform-providers/iam/internal/provider/iam/resources/custom_role.go:163 @module=hiiretail tf_resource_type=hiiretail_iam_custom_role tf_rpc=ReadResource timestamp=2025-10-03T13:24:39.695+0200
+2025-10-03T13:24:39.699+0200 [INFO]  provider.terraform-provider-hiiretail: Configured IAM Group Resource: @caller=/Users/shayne/repos/clients/extenda/hiiretail-terraform-providers/iam/internal/provider/iam/resources/group.go:122 tf_provider_addr=registry.terraform.io/extenda/hiiretail tf_resource_type=hiiretail_iam_group @module=hiiretail tf_req_id=65fd2dff-1c40-ad65-0bd4-0d12ed27a2e5 tf_rpc=ReadResource timestamp=2025-10-03T13:24:39.695+0200
+2025-10-03T13:24:39.802+0200 [DEBUG] provider.terraform-provider-hiiretail: Value switched to prior value due to semantic equality logic: tf_attribute_path=id tf_req_id=e61df407-5623-8619-628e-a97261919caf tf_resource_type=hiiretail_iam_custom_role tf_rpc=ReadResource @caller=/Users/shayne/go/pkg/mod/github.com/hashicorp/terraform-plugin-framework@v1.16.0/internal/fwschemadata/value_semantic_equality.go:91 @module=sdk.framework tf_provider_addr=registry.terraform.io/extenda/hiiretail timestamp=2025-10-03T13:24:39.802+0200
+2025-10-03T13:24:39.802+0200 [DEBUG] provider.terraform-provider-hiiretail: Value switched to prior value due to semantic equality logic: tf_resource_type=hiiretail_iam_custom_role tf_rpc=ReadResource tf_attribute_path=name tf_provider_addr=registry.terraform.io/extenda/hiiretail @caller=/Users/shayne/go/pkg/mod/github.com/hashicorp/terraform-plugin-framework@v1.16.0/internal/fwschemadata/value_semantic_equality.go:91 @module=sdk.framework tf_req_id=e61df407-5623-8619-628e-a97261919caf timestamp=2025-10-03T13:24:39.802+0200
+2025-10-03T13:24:39.802+0200 [DEBUG] provider.terraform-provider-hiiretail: Value switched to prior value due to semantic equality logic: tf_req_id=e61df407-5623-8619-628e-a97261919caf tf_rpc=ReadResource @caller=/Users/shayne/go/pkg/mod/github.com/hashicorp/terraform-plugin-framework@v1.16.0/internal/fwschemadata/value_semantic_equality.go:91 @module=sdk.framework tf_provider_addr=registry.terraform.io/extenda/hiiretail tf_attribute_path=description tf_resource_type=hiiretail_iam_custom_role timestamp=2025-10-03T13:24:39.802+0200
+2025-10-03T13:24:39.802+0200 [DEBUG] provider.terraform-provider-hiiretail: Value switched to prior value due to semantic equality logic: tf_provider_addr=registry.terraform.io/extenda/hiiretail tf_req_id=e61df407-5623-8619-628e-a97261919caf tf_resource_type=hiiretail_iam_custom_role tf_rpc=ReadResource @caller=/Users/shayne/go/pkg/mod/github.com/hashicorp/terraform-plugin-framework@v1.16.0/internal/fwschemadata/value_semantic_equality.go:91 @module=sdk.framework tf_attribute_path=permissions[Value({"attributes":{},"id":"iam.group.list"})].id timestamp=2025-10-03T13:24:39.802+0200
+2025-10-03T13:24:39.803+0200 [DEBUG] provider.terraform-provider-hiiretail: Value switched to prior value due to semantic equality logic: tf_provider_addr=registry.terraform.io/extenda/hiiretail tf_resource_type=hiiretail_iam_custom_role tf_attribute_path=permissions[Value({"attributes":{},"id":"iam.group.list"})].attributes tf_req_id=e61df407-5623-8619-628e-a97261919caf tf_rpc=ReadResource @caller=/Users/shayne/go/pkg/mod/github.com/hashicorp/terraform-plugin-framework@v1.16.0/internal/fwschemadata/value_semantic_equality.go:91 @module=sdk.framework timestamp=2025-10-03T13:24:39.802+0200
+2025-10-03T13:24:39.803+0200 [DEBUG] provider.terraform-provider-hiiretail: Value switched to prior value due to semantic equality logic: @caller=/Users/shayne/go/pkg/mod/github.com/hashicorp/terraform-plugin-framework@v1.16.0/internal/fwschemadata/value_semantic_equality.go:91 @module=sdk.framework tf_attribute_path=permissions[Value({"attributes":{},"id":"iam.group.list"})] tf_req_id=e61df407-5623-8619-628e-a97261919caf tf_provider_addr=registry.terraform.io/extenda/hiiretail tf_resource_type=hiiretail_iam_custom_role tf_rpc=ReadResource timestamp=2025-10-03T13:24:39.803+0200
+2025-10-03T13:24:39.803+0200 [DEBUG] provider.terraform-provider-hiiretail: Value switched to prior value due to semantic equality logic: tf_provider_addr=registry.terraform.io/extenda/hiiretail tf_req_id=e61df407-5623-8619-628e-a97261919caf tf_attribute_path=permissions tf_resource_type=hiiretail_iam_custom_role tf_rpc=ReadResource @caller=/Users/shayne/go/pkg/mod/github.com/hashicorp/terraform-plugin-framework@v1.16.0/internal/fwschemadata/value_semantic_equality.go:91 @module=sdk.framework timestamp=2025-10-03T13:24:39.803+0200
+2025-10-03T13:24:39.808+0200 [DEBUG] skipping FixUpBlockAttrs
+2025-10-03T13:24:39.810+0200 [DEBUG] provider.terraform-provider-hiiretail: Value switched to prior value due to semantic equality logic: @caller=/Users/shayne/go/pkg/mod/github.com/hashicorp/terraform-plugin-framework@v1.16.0/internal/fwschemadata/value_semantic_equality.go:91 @module=sdk.framework tf_attribute_path=id tf_req_id=65fd2dff-1c40-ad65-0bd4-0d12ed27a2e5 tf_resource_type=hiiretail_iam_group tf_rpc=ReadResource tf_provider_addr=registry.terraform.io/extenda/hiiretail timestamp=2025-10-03T13:24:39.810+0200
+2025-10-03T13:24:39.810+0200 [DEBUG] provider.terraform-provider-hiiretail: Value switched to prior value due to semantic equality logic: tf_attribute_path=name tf_resource_type=hiiretail_iam_group @caller=/Users/shayne/go/pkg/mod/github.com/hashicorp/terraform-plugin-framework@v1.16.0/internal/fwschemadata/value_semantic_equality.go:91 @module=sdk.framework tf_provider_addr=registry.terraform.io/extenda/hiiretail tf_req_id=65fd2dff-1c40-ad65-0bd4-0d12ed27a2e5 tf_rpc=ReadResource timestamp=2025-10-03T13:24:39.810+0200
+2025-10-03T13:24:39.810+0200 [INFO]  provider.terraform-provider-hiiretail: Configured IAM Custom Role Resource: tf_resource_type=hiiretail_iam_custom_role @caller=/Users/shayne/repos/clients/extenda/hiiretail-terraform-providers/iam/internal/provider/iam/resources/custom_role.go:163 @module=hiiretail tf_provider_addr=registry.terraform.io/extenda/hiiretail tf_req_id=b1abe202-540f-c53f-e3fc-77423aea2324 tf_rpc=ValidateResourceConfig timestamp=2025-10-03T13:24:39.810+0200
+2025-10-03T13:24:39.810+0200 [DEBUG] provider.terraform-provider-hiiretail: Value switched to prior value due to semantic equality logic: tf_provider_addr=registry.terraform.io/extenda/hiiretail tf_resource_type=hiiretail_iam_group tf_rpc=ReadResource @caller=/Users/shayne/go/pkg/mod/github.com/hashicorp/terraform-plugin-framework@v1.16.0/internal/fwschemadata/value_semantic_equality.go:91 tf_attribute_path=description tf_req_id=65fd2dff-1c40-ad65-0bd4-0d12ed27a2e5 @module=sdk.framework timestamp=2025-10-03T13:24:39.810+0200
+2025-10-03T13:24:39.810+0200 [DEBUG] provider.terraform-provider-hiiretail: Value switched to prior value due to semantic equality logic: tf_provider_addr=registry.terraform.io/extenda/hiiretail @caller=/Users/shayne/go/pkg/mod/github.com/hashicorp/terraform-plugin-framework@v1.16.0/internal/fwschemadata/value_semantic_equality.go:91 @module=sdk.framework tf_attribute_path=members tf_req_id=65fd2dff-1c40-ad65-0bd4-0d12ed27a2e5 tf_resource_type=hiiretail_iam_group tf_rpc=ReadResource timestamp=2025-10-03T13:24:39.810+0200
+2025-10-03T13:24:39.811+0200 [INFO]  provider.terraform-provider-hiiretail: Configured IAM Group Resource: tf_provider_addr=registry.terraform.io/extenda/hiiretail tf_rpc=ValidateResourceConfig @caller=/Users/shayne/repos/clients/extenda/hiiretail-terraform-providers/iam/internal/provider/iam/resources/group.go:122 @module=hiiretail tf_req_id=47601069-4d2f-2b75-b23b-6f694d838818 tf_resource_type=hiiretail_iam_group timestamp=2025-10-03T13:24:39.811+0200
+2025-10-03T13:24:39.814+0200 [INFO]  provider.terraform-provider-hiiretail: Configured IAM Group Resource: tf_provider_addr=registry.terraform.io/extenda/hiiretail tf_resource_type=hiiretail_iam_group tf_rpc=PlanResourceChange @module=hiiretail tf_req_id=bac0b683-0c9f-2019-b9b6-0b4db6317275 @caller=/Users/shayne/repos/clients/extenda/hiiretail-terraform-providers/iam/internal/provider/iam/resources/group.go:122 timestamp=2025-10-03T13:24:39.814+0200
+2025-10-03T13:24:39.820+0200 [INFO]  provider.terraform-provider-hiiretail: Configured IAM Custom Role Resource: tf_resource_type=hiiretail_iam_custom_role @module=hiiretail tf_provider_addr=registry.terraform.io/extenda/hiiretail tf_req_id=d8fbd90e-fa44-1a0b-d3c8-b23586c3f0eb tf_rpc=PlanResourceChange @caller=/Users/shayne/repos/clients/extenda/hiiretail-terraform-providers/iam/internal/provider/iam/resources/custom_role.go:163 timestamp=2025-10-03T13:24:39.819+0200
+2025-10-03T13:24:39.851+0200 [DEBUG] ReferenceTransformer: "hiiretail_iam_role_binding.test_role_binding" references: []
+[0m[1mhiiretail_iam_role_binding.test_role_binding: Refreshing state... [id=EYNaCiYX6WFmoPxXCGMf-custom.TerraformTest][0m
+2025-10-03T13:24:39.862+0200 [INFO]  provider.terraform-provider-hiiretail: Configured IAM Role Binding Resource: @module=hiiretail tf_provider_addr=registry.terraform.io/extenda/hiiretail tf_req_id=a97f2e38-b731-340e-a804-c568b3fca1b4 tf_resource_type=hiiretail_iam_role_binding tf_rpc=ReadResource @caller=/Users/shayne/repos/clients/extenda/hiiretail-terraform-providers/iam/internal/provider/iam/resources/role_binding.go:140 timestamp=2025-10-03T13:24:39.862+0200
+2025-10-03T13:24:39.903+0200 [WARN]  unexpected data: registry.terraform.io/extenda/hiiretail:stdout="=== DEBUG GetRoleBinding START: name=EYNaCiYX6WFmoPxXCGMf-custom.TerraformTest ==="
+2025-10-03T13:24:39.927+0200 [WARN]  unexpected data: registry.terraform.io/extenda/hiiretail:stdout="DEBUG: GetRoleBinding API call path: ../v2/tenants/CIR7nQwtS0rA6t0S6ejd/groups/EYNaCiYX6WFmoPxXCGMf/roles"
+2025-10-03T13:24:40.011+0200 [WARN]  unexpected data: registry.terraform.io/extenda/hiiretail:stdout="DEBUG: GetRoleBinding HTTP status: 200, Body length: 65"
+2025-10-03T13:24:40.012+0200 [WARN]  unexpected data: registry.terraform.io/extenda/hiiretail:stdout="DEBUG: GetRoleBinding API response for group EYNaCiYX6WFmoPxXCGMf (found 1 role bindings):"
+2025-10-03T13:24:40.012+0200 [WARN]  unexpected data: registry.terraform.io/extenda/hiiretail:stdout="DEBUG: RoleBinding[0]: isCustom=true, roleId=custom.TerraformTest, bindings=[]
+DEBUG: Looking for roleId: custom.TerraformTest"
+2025-10-03T13:24:40.012+0200 [DEBUG] provider.terraform-provider-hiiretail: Value switched to prior value due to semantic equality logic: tf_req_id=a97f2e38-b731-340e-a804-c568b3fca1b4 tf_resource_type=hiiretail_iam_role_binding tf_rpc=ReadResource @caller=/Users/shayne/go/pkg/mod/github.com/hashicorp/terraform-plugin-framework@v1.16.0/internal/fwschemadata/value_semantic_equality.go:91 tf_attribute_path=id tf_provider_addr=registry.terraform.io/extenda/hiiretail @module=sdk.framework timestamp=2025-10-03T13:24:40.012+0200
+2025-10-03T13:24:40.012+0200 [DEBUG] provider.terraform-provider-hiiretail: Value switched to prior value due to semantic equality logic: @module=sdk.framework tf_provider_addr=registry.terraform.io/extenda/hiiretail tf_resource_type=hiiretail_iam_role_binding tf_rpc=ReadResource @caller=/Users/shayne/go/pkg/mod/github.com/hashicorp/terraform-plugin-framework@v1.16.0/internal/fwschemadata/value_semantic_equality.go:91 tf_attribute_path=role tf_req_id=a97f2e38-b731-340e-a804-c568b3fca1b4 timestamp=2025-10-03T13:24:40.012+0200
+2025-10-03T13:24:40.012+0200 [DEBUG] provider.terraform-provider-hiiretail: Value switched to prior value due to semantic equality logic: tf_attribute_path=members[Value("group:testShayneGroup")] tf_req_id=a97f2e38-b731-340e-a804-c568b3fca1b4 tf_resource_type=hiiretail_iam_role_binding @caller=/Users/shayne/go/pkg/mod/github.com/hashicorp/terraform-plugin-framework@v1.16.0/internal/fwschemadata/value_semantic_equality.go:91 @module=sdk.framework tf_provider_addr=registry.terraform.io/extenda/hiiretail tf_rpc=ReadResource timestamp=2025-10-03T13:24:40.012+0200
+2025-10-03T13:24:40.012+0200 [DEBUG] provider.terraform-provider-hiiretail: Value switched to prior value due to semantic equality logic: @module=sdk.framework tf_rpc=ReadResource @caller=/Users/shayne/go/pkg/mod/github.com/hashicorp/terraform-plugin-framework@v1.16.0/internal/fwschemadata/value_semantic_equality.go:91 tf_attribute_path=members tf_provider_addr=registry.terraform.io/extenda/hiiretail tf_req_id=a97f2e38-b731-340e-a804-c568b3fca1b4 tf_resource_type=hiiretail_iam_role_binding timestamp=2025-10-03T13:24:40.012+0200
+2025-10-03T13:24:40.013+0200 [WARN]  Provider "registry.terraform.io/extenda/hiiretail" produced an unexpected new value for hiiretail_iam_role_binding.test_role_binding during refresh.
+      - .name: was cty.StringVal("test-role-binding-shayne"), but now cty.StringVal("EYNaCiYX6WFmoPxXCGMf-custom.TerraformTest")
+      - .updated_at: was cty.StringVal("2025-10-03T11:14:29+02:00"), but now cty.StringVal("")
+      - .created_at: was cty.StringVal("2025-10-03T11:14:29+02:00"), but now cty.StringVal("")
+2025-10-03T13:24:40.014+0200 [INFO]  provider.terraform-provider-hiiretail: Configured IAM Role Binding Resource: @module=hiiretail tf_req_id=8c975441-44fe-a1ae-b604-68428d164e10 @caller=/Users/shayne/repos/clients/extenda/hiiretail-terraform-providers/iam/internal/provider/iam/resources/role_binding.go:140 tf_provider_addr=registry.terraform.io/extenda/hiiretail tf_resource_type=hiiretail_iam_role_binding tf_rpc=ValidateResourceConfig timestamp=2025-10-03T13:24:40.014+0200
+2025-10-03T13:24:40.015+0200 [INFO]  provider.terraform-provider-hiiretail: Configured IAM Role Binding Resource: @caller=/Users/shayne/repos/clients/extenda/hiiretail-terraform-providers/iam/internal/provider/iam/resources/role_binding.go:140 tf_provider_addr=registry.terraform.io/extenda/hiiretail tf_req_id=57b8ba92-f08f-c02e-41ac-c69a65c6d599 tf_resource_type=hiiretail_iam_role_binding tf_rpc=PlanResourceChange @module=hiiretail timestamp=2025-10-03T13:24:40.015+0200
+2025-10-03T13:24:40.015+0200 [DEBUG] provider.terraform-provider-hiiretail: Detected value change between proposed new state and prior state: @caller=/Users/shayne/go/pkg/mod/github.com/hashicorp/terraform-plugin-framework@v1.16.0/internal/fwserver/server_planresourcechange.go:241 @module=sdk.framework tf_rpc=PlanResourceChange tf_attribute_path=name tf_provider_addr=registry.terraform.io/extenda/hiiretail tf_req_id=57b8ba92-f08f-c02e-41ac-c69a65c6d599 tf_resource_type=hiiretail_iam_role_binding timestamp=2025-10-03T13:24:40.015+0200
+2025-10-03T13:24:40.015+0200 [DEBUG] provider.terraform-provider-hiiretail: Marking Computed attributes with null configuration values as unknown (known after apply) in the plan to prevent potential Terraform errors: @module=sdk.framework tf_provider_addr=registry.terraform.io/extenda/hiiretail tf_rpc=PlanResourceChange @caller=/Users/shayne/go/pkg/mod/github.com/hashicorp/terraform-plugin-framework@v1.16.0/internal/fwserver/server_planresourcechange.go:250 tf_req_id=57b8ba92-f08f-c02e-41ac-c69a65c6d599 tf_resource_type=hiiretail_iam_role_binding timestamp=2025-10-03T13:24:40.015+0200
+2025-10-03T13:24:40.015+0200 [DEBUG] provider.terraform-provider-hiiretail: marking computed attribute that is null in the config as unknown: @caller=/Users/shayne/go/pkg/mod/github.com/hashicorp/terraform-plugin-framework@v1.16.0/internal/fwserver/server_planresourcechange.go:538 tf_req_id=57b8ba92-f08f-c02e-41ac-c69a65c6d599 @module=sdk.framework tf_attribute_path=AttributeName("created_at") tf_provider_addr=registry.terraform.io/extenda/hiiretail tf_resource_type=hiiretail_iam_role_binding tf_rpc=PlanResourceChange timestamp=2025-10-03T13:24:40.015+0200
+2025-10-03T13:24:40.015+0200 [DEBUG] provider.terraform-provider-hiiretail: marking computed attribute that is null in the config as unknown: @module=sdk.framework tf_attribute_path=AttributeName("id") tf_resource_type=hiiretail_iam_role_binding tf_rpc=PlanResourceChange @caller=/Users/shayne/go/pkg/mod/github.com/hashicorp/terraform-plugin-framework@v1.16.0/internal/fwserver/server_planresourcechange.go:538 tf_provider_addr=registry.terraform.io/extenda/hiiretail tf_req_id=57b8ba92-f08f-c02e-41ac-c69a65c6d599 timestamp=2025-10-03T13:24:40.015+0200
+2025-10-03T13:24:40.015+0200 [DEBUG] provider.terraform-provider-hiiretail: marking computed attribute that is null in the config as unknown: tf_req_id=57b8ba92-f08f-c02e-41ac-c69a65c6d599 @caller=/Users/shayne/go/pkg/mod/github.com/hashicorp/terraform-plugin-framework@v1.16.0/internal/fwserver/server_planresourcechange.go:538 @module=sdk.framework tf_provider_addr=registry.terraform.io/extenda/hiiretail tf_resource_type=hiiretail_iam_role_binding tf_rpc=PlanResourceChange tf_attribute_path=AttributeName("updated_at") timestamp=2025-10-03T13:24:40.015+0200
+2025-10-03T13:24:40.019+0200 [DEBUG] provider.stdio: received EOF, stopping recv loop: err="rpc error: code = Unavailable desc = error reading from server: EOF"
+2025-10-03T13:24:40.022+0200 [DEBUG] provider: plugin process exited: path=/Users/shayne/repos/clients/extenda/hiiretail-terraform-providers/iam/terraform-provider-hiiretail pid=15549
+2025-10-03T13:24:40.034+0200 [DEBUG] provider: plugin exited
+2025-10-03T13:24:40.043+0200 [DEBUG] building apply graph to check for errors
+2025-10-03T13:24:40.044+0200 [DEBUG] ProviderTransformer: "hiiretail_iam_role_binding.test_role_binding" (*terraform.NodeApplyableResourceInstance) needs provider["registry.terraform.io/extenda/hiiretail"]
+2025-10-03T13:24:40.044+0200 [DEBUG] ProviderTransformer: "hiiretail_iam_custom_role.test_custom_role (expand)" (*terraform.nodeExpandApplyableResource) needs provider["registry.terraform.io/extenda/hiiretail"]
+2025-10-03T13:24:40.044+0200 [DEBUG] ProviderTransformer: "hiiretail_iam_role_binding.test_role_binding (expand)" (*terraform.nodeExpandApplyableResource) needs provider["registry.terraform.io/extenda/hiiretail"]
+2025-10-03T13:24:40.044+0200 [DEBUG] ProviderTransformer: "hiiretail_iam_group.test_group (expand)" (*terraform.nodeExpandApplyableResource) needs provider["registry.terraform.io/extenda/hiiretail"]
+2025-10-03T13:24:40.044+0200 [DEBUG] ReferenceTransformer: "hiiretail_iam_role_binding.test_role_binding" references: [hiiretail_iam_group.test_group (expand) hiiretail_iam_custom_role.test_custom_role (expand)]
+2025-10-03T13:24:40.044+0200 [DEBUG] ReferenceTransformer: "provider[\"registry.terraform.io/extenda/hiiretail\"]" references: [var.client_id var.client_secret var.tenant_id]
+2025-10-03T13:24:40.044+0200 [DEBUG] ReferenceTransformer: "hiiretail_iam_custom_role.test_custom_role (expand)" references: []
+2025-10-03T13:24:40.044+0200 [DEBUG] ReferenceTransformer: "var.client_id" references: []
+2025-10-03T13:24:40.044+0200 [DEBUG] ReferenceTransformer: "output.role_binding_id (expand)" references: [hiiretail_iam_role_binding.test_role_binding hiiretail_iam_role_binding.test_role_binding hiiretail_iam_role_binding.test_role_binding (expand)]
+2025-10-03T13:24:40.044+0200 [DEBUG] ReferenceTransformer: "var.tenant_id" references: []
+2025-10-03T13:24:40.044+0200 [DEBUG] ReferenceTransformer: "output.created_group_name (expand)" references: [hiiretail_iam_group.test_group (expand)]
+2025-10-03T13:24:40.044+0200 [DEBUG] ReferenceTransformer: "hiiretail_iam_role_binding.test_role_binding (expand)" references: []
+2025-10-03T13:24:40.044+0200 [DEBUG] ReferenceTransformer: "hiiretail_iam_group.test_group (expand)" references: []
+2025-10-03T13:24:40.044+0200 [DEBUG] ReferenceTransformer: "var.client_secret" references: []
+2025-10-03T13:24:40.045+0200 [INFO]  backend/local: plan operation completed
+
+Terraform used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
+  [33m~[0m update in-place[0m
+
+Terraform will perform the following actions:
+
+[1m  # hiiretail_iam_role_binding.test_role_binding[0m will be updated in-place
+[0m  [33m~[0m[0m resource "hiiretail_iam_role_binding" "test_role_binding" {
+      [32m+[0m[0m created_at = (known after apply)
+        id         = "EYNaCiYX6WFmoPxXCGMf-custom.TerraformTest"
+      [33m~[0m[0m name       = "EYNaCiYX6WFmoPxXCGMf-custom.TerraformTest" [33m->[0m[0m "test-role-binding-shayne"
+      [32m+[0m[0m updated_at = (known after apply)
+        [90m# (2 unchanged attributes hidden)[0m[0m
+    }
+
+[1mPlan:[0m 0 to add, 1 to change, 0 to destroy.
+[0m[90m
+─────────────────────────────────────────────────────────────────────────────[0m
+
+Note: You didn't use the -out option to save this plan, so Terraform can't
+guarantee to take exactly these actions if you run "terraform apply" now.
