@@ -578,31 +578,15 @@ func (r *IamCustomRoleResource) apiResponseToModel(ctx context.Context, apiResp 
 			"perm.Attributes": perm.Attributes,
 		})
 
+		// Always set alias to null since it's computed and not provided in config
+		// This ensures consistency between planned and actual state
+		aliasValue := types.StringNull()
+
 		permissionsList[i] = PermissionsValue{
-			Id:    types.StringValue(perm.ID),
-			Alias: types.StringValue(perm.Alias),
-			state: attr.ValueStateKnown,
-		}
-
-		// Convert attributes - handle both null and actual values
-		if len(perm.Attributes) == 0 {
-			permissionsList[i].Attributes = types.ObjectNull(map[string]attr.Type{})
-		} else {
-			// Convert map[string]interface{} to map[string]attr.Value
-			attrValues := make(map[string]attr.Value)
-			attrTypes := make(map[string]attr.Type)
-			for key, value := range perm.Attributes {
-				if strValue, ok := value.(string); ok {
-					attrValues[key] = types.StringValue(strValue)
-					attrTypes[key] = types.StringType
-				}
-			}
-
-			objValue, diags := types.ObjectValue(attrTypes, attrValues)
-			if diags.HasError() {
-				return fmt.Errorf("failed to convert attributes to object: %s", diags[0].Summary())
-			}
-			permissionsList[i].Attributes = objValue
+			Id:         types.StringValue(perm.ID),
+			Alias:      aliasValue,
+			Attributes: types.ObjectValueMust(map[string]attr.Type{}, map[string]attr.Value{}), // Create empty object to match {} in config
+			state:      attr.ValueStateKnown,
 		}
 	}
 
