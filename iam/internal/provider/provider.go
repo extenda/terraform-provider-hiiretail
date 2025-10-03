@@ -205,6 +205,7 @@ func (p *HiiRetailProvider) Resources(ctx context.Context) []func() resource.Res
 		resources.NewGroupResource,
 		resources.NewCustomRoleResource,
 		resources.NewRoleBindingResource,
+		resources.NewResourceResource,
 	}
 }
 
