@@ -223,9 +223,6 @@ func (r *RoleBindingResource) Read(ctx context.Context, req resource.ReadRequest
 		return
 	}
 
-	fmt.Printf("=== DEBUG Read METHOD START: ID=%s ===\n", data.ID.ValueString())
-	fmt.Printf("CRITICAL: This debug output should appear if Read method is called\n")
-
 	// Get role binding from API
 	binding, err := r.iamService.GetRoleBinding(ctx, data.ID.ValueString())
 	if err != nil {
@@ -244,7 +241,7 @@ func (r *RoleBindingResource) Read(ctx context.Context, req resource.ReadRequest
 	// Map API response to resource model
 	data.ID = types.StringValue(binding.ID)
 	// NEVER set name - always preserve the configured name from Terraform
-	fmt.Printf("DEBUG Read: NOT setting data.Name at all, preserving configured value: %s\n", data.Name.ValueString())
+
 	// NOTE: data.Name is intentionally NOT set here to preserve the configuration value
 	data.Role = types.StringValue(binding.Role)
 	// Set condition properly - use null if empty to maintain Terraform consistency
@@ -269,7 +266,7 @@ func (r *RoleBindingResource) Read(ctx context.Context, req resource.ReadRequest
 		data.CreatedAt = types.StringValue(binding.CreatedAt)
 	}
 	// If API doesn't provide CreatedAt, keep the current value (don't override)
-	
+
 	if binding.UpdatedAt != "" {
 		data.UpdatedAt = types.StringValue(binding.UpdatedAt)
 	}

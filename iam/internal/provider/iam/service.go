@@ -421,8 +421,7 @@ func (s *Service) ListRoleBindings(ctx context.Context, filter string) ([]RoleBi
 // Since role bindings are stored as group role assignments, we parse the binding ID
 // (format: "groupId-roleId") to make direct API calls instead of searching all groups
 func (s *Service) GetRoleBinding(ctx context.Context, name string) (*RoleBinding, error) {
-	fmt.Printf("=== DEBUG GetRoleBinding START: name=%s ===\n", name)
-	fmt.Printf("DEBUG GetRoleBinding: Called from Read method\n")
+
 	// Parse the binding ID to extract groupId and roleId
 	// Expected format: "groupId-roleId" (e.g., "EYNaCiYX6WFmoPxXCGMf-custom.TerraformTestShayne")
 	parts := strings.Split(name, "-")
@@ -450,16 +449,14 @@ func (s *Service) GetRoleBinding(ctx context.Context, name string) (*RoleBinding
 
 	// Get roles for this specific group
 	path := fmt.Sprintf("../v2/tenants/%s/groups/%s/roles", s.tenantID, groupID)
-	fmt.Printf("DEBUG: GetRoleBinding API call path: %s\n", path)
+
 	resp, err := s.client.Get(ctx, path, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get roles for group %s: %w", groupID, err)
 	}
 
-	fmt.Printf("DEBUG: GetRoleBinding HTTP status: %d, Body length: %d\n", resp.StatusCode, len(resp.Body))
-
 	if err := client.CheckResponse(resp); err != nil {
-		fmt.Printf("DEBUG: GetRoleBinding CheckResponse error: %v\n", err)
+
 		if client.IsNotFoundError(err) {
 			return nil, &client.Error{
 				StatusCode: 404,
@@ -474,14 +471,6 @@ func (s *Service) GetRoleBinding(ctx context.Context, name string) (*RoleBinding
 	if err := json.Unmarshal(resp.Body, &roleBindings); err != nil {
 		return nil, fmt.Errorf("failed to parse role bindings response: %w", err)
 	}
-
-	// Debug: Log the actual API response for troubleshooting
-	fmt.Printf("DEBUG: GetRoleBinding API response for group %s (found %d role bindings):\n", groupID, len(roleBindings))
-	for i, roleBinding := range roleBindings {
-		fmt.Printf("DEBUG: RoleBinding[%d]: isCustom=%v, roleId=%s, bindings=%v\n",
-			i, roleBinding.IsCustom, roleBinding.RoleID, roleBinding.Bindings)
-	}
-	fmt.Printf("DEBUG: Looking for roleId: %s\n", roleID)
 
 	// Look for the specific role assignment
 	// Since we're calling /groups/{groupId}/roles, every role returned is bound to this group
@@ -523,7 +512,7 @@ func (s *Service) GetRoleBinding(ctx context.Context, name string) (*RoleBinding
 
 			binding := &RoleBinding{
 				ID:        name,
-				Name:      "",  // Don't set name here - let the resource preserve the configured name
+				Name:      "", // Don't set name here - let the resource preserve the configured name
 				Role:      fmt.Sprintf("%s%s", rolePrefix, actualRoleID),
 				Members:   []string{fmt.Sprintf("group:%s", group.Name)},
 				Condition: "",              // Role bindings don't have conditions in V2 API
@@ -541,8 +530,6 @@ func (s *Service) GetRoleBinding(ctx context.Context, name string) (*RoleBinding
 	// retrieve the group (indicating the binding ID is valid) and construct
 	// a response based on the expected format.
 
-	fmt.Printf("DEBUG: Role binding not found in API response, attempting workaround for %s\n", name)
-
 	// If we got this far, the group exists and the roleID is valid format
 	// Construct a binding based on the ID format with proper role format
 	// The configuration expects "roles/custom.{roleId}" format for custom roles
@@ -551,7 +538,7 @@ func (s *Service) GetRoleBinding(ctx context.Context, name string) (*RoleBinding
 	// Return a constructed binding - this is a workaround for the API inconsistency
 	binding := &RoleBinding{
 		ID:        name,
-		Name:      "",  // Don't set name here - let the resource preserve the configured name
+		Name:      "", // Don't set name here - let the resource preserve the configured name
 		Role:      role,
 		Members:   []string{fmt.Sprintf("group:%s", group.Name)},
 		Condition: "", // Role bindings don't have conditions in V2 API
@@ -559,7 +546,6 @@ func (s *Service) GetRoleBinding(ctx context.Context, name string) (*RoleBinding
 		UpdatedAt: "", // Empty timestamps will be filled by Update method
 	}
 
-	fmt.Printf("DEBUG: Returning constructed role binding as workaround: %+v\n", binding)
 	return binding, nil
 }
 
@@ -620,8 +606,6 @@ func (s *Service) CreateRoleBinding(ctx context.Context, binding *RoleBinding) (
 	// Use V2 group role endpoint: POST /api/v2/tenants/{tenantId}/groups/{groupId}/roles
 	// Use relative path from /api/v1 to get to /api/v2
 	path := fmt.Sprintf("../v2/tenants/%s/groups/%s/roles", s.tenantID, groupID)
-
-	fmt.Printf("=== DEBUG CreateRoleBinding: payload=%+v, path=%s ===\n", payload, path)
 
 	resp, err := s.client.Post(ctx, path, payload)
 	if err != nil {
@@ -705,12 +689,63 @@ func (s *Service) UpdateRoleBinding(ctx context.Context, name string, binding *R
 	return updatedBinding, nil
 }
 
-// DeleteRoleBinding deletes an IAM role binding
+// DeleteRoleBinding deletes an IAM role binding using V2 group role endpoints
 func (s *Service) DeleteRoleBinding(ctx context.Context, name string) error {
-	path := fmt.Sprintf("bindings/%s", name)
+
+	// Parse the binding ID to extract groupId and roleId
+	// Expected format: "groupId-roleId" (e.g., "EYNaCiYX6WFmoPxXCGMf-custom.TerraformTest")
+	parts := strings.Split(name, "-")
+	if len(parts) < 2 {
+		return &client.Error{
+			StatusCode: 400,
+			Message:    fmt.Sprintf("invalid role binding ID format: %s", name),
+		}
+	}
+
+	groupID := parts[0]
+	roleID := strings.Join(parts[1:], "-") // Handle role IDs that might contain hyphens
+
+	// Determine if it's a custom role and extract the role name
+	roleId := roleID
+	isCustom := false
+
+	if strings.HasPrefix(roleId, "custom.") {
+		roleId = strings.TrimPrefix(roleId, "custom.")
+		isCustom = true
+	}
+
+	// Try different V2 endpoints to find the correct delete pattern
+	// Option 1: DELETE /api/v2/tenants/{tenantId}/groups/{groupId}/roles/{roleId}
+	path := fmt.Sprintf("../v2/tenants/%s/groups/%s/roles/%s", s.tenantID, groupID, roleId)
+
 	resp, err := s.client.Delete(ctx, path)
 	if err != nil {
 		return fmt.Errorf("failed to delete role binding %s: %w", name, err)
+	}
+
+	// If we get 403, try alternative approach: POST with empty bindings to remove the role
+	if resp.StatusCode == 403 {
+
+		// Try to "update" the role binding by setting bindings to empty
+		// This might be how the API expects role removal
+		payload := map[string]interface{}{
+			"roleId":   roleId,
+			"isCustom": isCustom,
+			"bindings": []string{}, // Empty bindings might remove the role
+		}
+
+		postPath := fmt.Sprintf("../v2/tenants/%s/groups/%s/roles", s.tenantID, groupID)
+
+		postResp, postErr := s.client.Post(ctx, postPath, payload)
+		if postErr != nil {
+			return fmt.Errorf("failed to remove role binding %s via POST method: %w", name, postErr)
+		}
+
+		if err := client.CheckResponse(postResp); err != nil {
+			return fmt.Errorf("alternative delete method failed for role binding %s: %w", name, err)
+		}
+
+		return nil
 	}
 
 	if err := client.CheckResponse(resp); err != nil {

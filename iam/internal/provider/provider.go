@@ -133,7 +133,7 @@ func (p *HiiRetailProvider) Configure(ctx context.Context, req provider.Configur
 
 	// Build verification marker - this proves the binary is active
 	// This should be updated by the build script with a unique ID
-	fmt.Printf("[BUILD_VERIFICATION] HiiRetail Provider binary is active - build: PLACEHOLDER_BUILD_ID\n")
+	fmt.Printf("[BUILD_VERIFICATION] HiiRetail Provider binary is active - build: 371FFBEA\n")
 
 	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
 
