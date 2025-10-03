@@ -551,24 +551,33 @@ func (s *Service) GetRoleBinding(ctx context.Context, name string) (*RoleBinding
 
 // CreateRoleBinding creates a new IAM role binding using V2 group role endpoints
 func (s *Service) CreateRoleBinding(ctx context.Context, binding *RoleBinding) (*RoleBinding, error) {
+	fmt.Printf("=== DEBUG CreateRoleBinding START ===\n")
+	fmt.Printf("Input binding: %+v\n", binding)
+
 	// Extract group ID from members array (expected format: "group:groupName")
 	var groupID string
 	var groupName string
 	for _, member := range binding.Members {
 		if strings.HasPrefix(member, "group:") {
 			groupName = strings.TrimPrefix(member, "group:")
+			fmt.Printf("DEBUG: Looking for group with name: '%s'\n", groupName)
 			// Find the group by name to get its ID
 			groupsResp, err := s.ListGroups(ctx, &ListGroupsRequest{})
 			if err != nil {
+				fmt.Printf("ERROR: ListGroups failed: %v\n", err)
 				return nil, fmt.Errorf("failed to list groups to find group '%s': %w", groupName, err)
 			}
-			for _, group := range groupsResp.Groups {
+			fmt.Printf("DEBUG: ListGroups returned %d groups\n", len(groupsResp.Groups))
+			for i, group := range groupsResp.Groups {
+				fmt.Printf("DEBUG: Group[%d]: ID='%s', Name='%s'\n", i, group.ID, group.Name)
 				if group.Name == groupName {
 					groupID = group.ID
+					fmt.Printf("DEBUG: Found matching group with ID: '%s'\n", groupID)
 					break
 				}
 			}
 			if groupID == "" {
+				fmt.Printf("ERROR: Group '%s' not found in %d returned groups\n", groupName, len(groupsResp.Groups))
 				return nil, fmt.Errorf("group '%s' not found", groupName)
 			}
 			break
@@ -578,6 +587,8 @@ func (s *Service) CreateRoleBinding(ctx context.Context, binding *RoleBinding) (
 	if groupID == "" {
 		return nil, fmt.Errorf("no group found in members array - role binding requires a group member")
 	}
+
+	fmt.Printf("Found groupName: '%s', groupID: '%s'\n", groupName, groupID)
 
 	// Parse role to extract roleId and determine if it's custom
 	roleId := binding.Role
@@ -593,26 +604,45 @@ func (s *Service) CreateRoleBinding(ctx context.Context, binding *RoleBinding) (
 		isCustom = false
 	}
 
-	// Create the proper CreateRoleBindingDto payload for V2 API
-	// Based on working NodeJS code: roleId should be just the role name
-	// bindings array is for business unit bindings (bu:storeId), not group ID
-	// The group is already specified in the URL path
-	payload := map[string]interface{}{
-		"roleId":   roleId, // Just the role name (e.g. "TerraformTestShayne")
-		"isCustom": isCustom,
-		"bindings": []string{}, // Empty for now - this is for business unit bindings
+	fmt.Printf("Parsed roleId: '%s', isCustom: %t\n", roleId, isCustom)
+
+	// Based on manual testing, the V2 API expects the full role ID including "custom." prefix
+	// Manual curl shows 404 when using just "TerraformTest" but processes when using "custom.TerraformTest"
+
+	// For the V2 API, we need the full role ID
+	apiRoleId := roleId
+	if isCustom {
+		apiRoleId = "custom." + roleId // V2 API expects full role ID like "custom.TerraformTest"
 	}
 
+	// Based on NodeJS code: bindings: ["bu:${data.Store_ID}"]
+	// Let's try some common business unit patterns
+	bindings := []string{"bu:001"} // Try a common store ID format
+
+	payload := map[string]interface{}{
+		"roleId":   apiRoleId, // Use full role ID for V2 API
+		"isCustom": isCustom,
+		"bindings": bindings,
+	}
+
+	fmt.Printf("API payload: %+v\n", payload)
+
 	// Use V2 group role endpoint: POST /api/v2/tenants/{tenantId}/groups/{groupId}/roles
-	// Use relative path from /api/v1 to get to /api/v2
 	path := fmt.Sprintf("../v2/tenants/%s/groups/%s/roles", s.tenantID, groupID)
+
+	fmt.Printf("API endpoint: %s\n", path)
 
 	resp, err := s.client.Post(ctx, path, payload)
 	if err != nil {
+		fmt.Printf("ERROR: API call failed: %v\n", err)
 		return nil, fmt.Errorf("failed to create role binding for group %s: %w", groupID, err)
 	}
 
+	fmt.Printf("API response status: %d\n", resp.StatusCode)
+	fmt.Printf("API response body: %s\n", string(resp.Body))
+
 	if err := client.CheckResponse(resp); err != nil {
+		fmt.Printf("ERROR: CheckResponse failed: %v\n", err)
 		return nil, err
 	}
 
@@ -639,6 +669,9 @@ func (s *Service) CreateRoleBinding(ctx context.Context, binding *RoleBinding) (
 		// Only set Condition if it's not empty to maintain consistency with Terraform
 		Condition: binding.Condition,
 	}
+
+	fmt.Printf("Returning result: %+v\n", result)
+	fmt.Printf("=== DEBUG CreateRoleBinding END ===\n")
 
 	return result, nil
 }
