@@ -49,6 +49,23 @@ resource "hiiretail_iam_custom_role" "test_custom_role" {
   ]
 }
 
+resource "hiiretail_iam_role_binding" "test_role_binding" {
+  # Name for the role binding
+  name = "test-role-binding-shayne"
+  
+  # Assign the custom role to the group
+  role = "roles/custom.${hiiretail_iam_custom_role.test_custom_role.id}"
+  
+  # Bind the role to the group (using group name as member)
+  members = [
+    "group:${hiiretail_iam_group.test_group.name}"
+  ]
+}
+
 output "created_group_name" {
   value = hiiretail_iam_group.test_group.name
+}
+
+output "role_binding_id" {
+  value = hiiretail_iam_role_binding.test_role_binding.id
 }

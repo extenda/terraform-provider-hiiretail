@@ -182,7 +182,12 @@ func (r *RoleBindingResource) Create(ctx context.Context, req resource.CreateReq
 	data.ID = types.StringValue(createdBinding.ID)
 	data.Name = types.StringValue(createdBinding.Name)
 	data.Role = types.StringValue(createdBinding.Role)
-	data.Condition = types.StringValue(createdBinding.Condition)
+	// Set condition properly - use null if empty to maintain Terraform consistency
+	if createdBinding.Condition == "" {
+		data.Condition = types.StringNull()
+	} else {
+		data.Condition = types.StringValue(createdBinding.Condition)
+	}
 
 	if len(createdBinding.Members) > 0 {
 		memberElements := make([]attr.Value, len(createdBinding.Members))
@@ -233,7 +238,12 @@ func (r *RoleBindingResource) Read(ctx context.Context, req resource.ReadRequest
 	data.ID = types.StringValue(binding.ID)
 	data.Name = types.StringValue(binding.Name)
 	data.Role = types.StringValue(binding.Role)
-	data.Condition = types.StringValue(binding.Condition)
+	// Set condition properly - use null if empty to maintain Terraform consistency
+	if binding.Condition == "" {
+		data.Condition = types.StringNull()
+	} else {
+		data.Condition = types.StringValue(binding.Condition)
+	}
 
 	if len(binding.Members) > 0 {
 		memberElements := make([]attr.Value, len(binding.Members))
@@ -292,7 +302,12 @@ func (r *RoleBindingResource) Update(ctx context.Context, req resource.UpdateReq
 
 	// Map API response back to resource model
 	data.Role = types.StringValue(updatedBinding.Role)
-	data.Condition = types.StringValue(updatedBinding.Condition)
+	// Set condition properly - use null if empty to maintain Terraform consistency
+	if updatedBinding.Condition == "" {
+		data.Condition = types.StringNull()
+	} else {
+		data.Condition = types.StringValue(updatedBinding.Condition)
+	}
 
 	if len(updatedBinding.Members) > 0 {
 		memberElements := make([]attr.Value, len(updatedBinding.Members))
