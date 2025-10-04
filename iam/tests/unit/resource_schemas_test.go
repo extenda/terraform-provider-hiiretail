@@ -1,4 +1,4 @@
-package provider
+package unit_test
 
 import (
 	"testing"

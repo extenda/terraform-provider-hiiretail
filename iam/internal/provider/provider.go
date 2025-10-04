@@ -18,6 +18,7 @@ import (
 
 	"github.com/extenda/hiiretail-terraform-providers/hiiretail/internal/provider/iam/datasources"
 	"github.com/extenda/hiiretail-terraform-providers/hiiretail/internal/provider/iam/resources"
+	"github.com/extenda/hiiretail-terraform-providers/hiiretail/internal/provider/resource_iam_role_binding"
 	"github.com/extenda/hiiretail-terraform-providers/hiiretail/internal/provider/shared/auth"
 	"github.com/extenda/hiiretail-terraform-providers/hiiretail/internal/provider/shared/client"
 	"github.com/extenda/hiiretail-terraform-providers/hiiretail/internal/provider/shared/validators"
@@ -152,7 +153,7 @@ func (p *HiiRetailProvider) Configure(ctx context.Context, req provider.Configur
 	// Build client configuration with hardcoded URLs and defaults
 	clientConfig := &client.Config{
 		BaseURL:      "https://iam-api.retailsvc.com", // Hardcoded IAM API URL base
-		IAMEndpoint:  "/api/v1",                       // Use correct API version endpoint
+		IAMEndpoint:  "/api/v1",                       // Most resources use V1 API - role bindings will bypass this
 		CCCEndpoint:  "/ccc/v1",                       // Default CCC endpoint
 		Timeout:      30 * time.Second,                // Default timeout
 		MaxRetries:   3,                               // Default retries
@@ -204,7 +205,7 @@ func (p *HiiRetailProvider) Resources(ctx context.Context) []func() resource.Res
 		// IAM resources
 		resources.NewGroupResource,
 		resources.NewCustomRoleResource,
-		resources.NewRoleBindingResource,
+		resource_iam_role_binding.NewIamRoleBindingResource, // Use enhanced role binding resource
 		resources.NewResourceResource,
 	}
 }

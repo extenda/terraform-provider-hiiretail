@@ -35,20 +35,6 @@ resource "hiiretail_iam_group" "test_group" {
   members     = []
 }
 
-resource "hiiretail_iam_custom_role" "test_custom_role" {
-  id          = "custom.TerraformTest"
-  name        = "TerraformTest"
-  description = "Test custom role created via Terraform"
-  
-  # Define permissions for the custom role - using standard IAM permissions
-  permissions = [
-    {
-      id = "rec.reconciliations.approve"
-      attributes = {}
-    }
-  ]
-}
-
 resource "hiiretail_iam_resource" "test_bu" {
   id   = "bu:tf01"
   name = "Terraform Store"
@@ -58,15 +44,17 @@ resource "hiiretail_iam_resource" "test_bu" {
 }
 
 resource "hiiretail_iam_role_binding" "test_role_binding" {
-  # Name for the role binding
-  name = "test-role-binding-shayne"
+  # group ID for the role binding
+  group_id = hiiretail_iam_group.test_group.id
   
-  # Assign the custom role to the group  
-  role = "roles/${hiiretail_iam_custom_role.test_custom_role.id}"
-  
-  # Use members array with the hiiretail_iam_resource reference (array of strings as requested)
-  members = [
-    hiiretail_iam_resource.test_bu.id
+  # Enhanced schema - using roles array with resource bindings
+  roles = [
+    {
+      id = "custom.ReconciliationApprover"  # Use existing custom role
+      bindings = [
+        hiiretail_iam_resource.test_bu.id  # Reference to our business unit resource
+      ]
+    }
   ]
 }
 

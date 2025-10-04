@@ -1,0 +1,92 @@
+terraform {
+  required_providers {
+    hiiretail = {
+      source = "registry.terraform.io/extenda/hiiretail"
+    }
+  }
+}
+
+provider "hiiretail" {
+  client_id     = var.client_id
+  client_secret = var.client_secret
+  tenant_id     = var.tenant_id
+}
+
+variable "client_id" {
+  description = "OAuth2 client ID"
+  type        = string
+}
+
+variable "client_secret" {
+  description = "OAuth2 client secret"
+  type        = string
+  sensitive   = true
+}
+
+variable "tenant_id" {
+  description = "Tenant ID"
+  type        = string
+  default     = "CIR7nQwtS0rA6t0S6ejd"
+}
+
+resource "hiiretail_iam_group" "test_group" {
+  name        = "finance-team"
+  description = "Finance team members who can approve reconciliations"
+  members     = []
+}
+
+resource "hiiretail_iam_custom_role" "test_custom_role" {
+  id          = "custom.ReconciliationApprover"
+  name        = "Reconciliation_Approver"
+  description = "Role for users who can approve financial reconciliations and view related reports"
+  
+  # Define permissions for reconciliation approval workflow
+  permissions = [
+    {
+      id = "rec.reconciliations.approve"
+      attributes = {}
+    }
+  ]
+}
+
+resource "hiiretail_iam_resource" "test_bu" {
+  id   = "bu:tf01"
+  name = "Terraform Store"
+  props = jsonencode({
+    type     = "business-unit"
+  })
+}
+
+resource "hiiretail_iam_role_binding" "reconciliation_approvers" {
+  # Enhanced structure: Use group_id instead of name
+  group_id = hiiretail_iam_group.test_group.id
+  
+  # Enhanced structure: Each role contains its own bindings
+  # This allows role-specific bindings in a single resource!
+  roles = [{
+    id = hiiretail_iam_custom_role.test_custom_role.id
+    bindings = [
+      hiiretail_iam_resource.test_bu.id
+    ]
+  }]
+}
+
+output "test_bu_resource" {
+  value = {
+    id        = hiiretail_iam_resource.test_bu.id
+    name      = hiiretail_iam_resource.test_bu.name
+    tenant_id = hiiretail_iam_resource.test_bu.tenant_id
+  }
+}
+
+# output "test_department_resource" {
+#   value = {
+#     id        = hiiretail_iam_resource.test_department.id
+#     name      = hiiretail_iam_resource.test_department.name
+#     tenant_id = hiiretail_iam_resource.test_department.tenant_id
+#   }
+# }
+
+output "created_group_name" {
+  value = hiiretail_iam_group.test_group.name
+}

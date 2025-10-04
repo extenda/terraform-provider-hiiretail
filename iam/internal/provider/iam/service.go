@@ -12,15 +12,17 @@ import (
 
 // Service provides IAM API operations
 type Service struct {
-	client   *client.ServiceClient
-	tenantID string
+	client    *client.ServiceClient
+	rawClient *client.Client // For direct API calls that need custom paths (like V2 API)
+	tenantID  string
 }
 
 // NewService creates a new IAM service client
 func NewService(apiClient *client.Client, tenantID string) *Service {
 	return &Service{
-		client:   apiClient.IAMClient(),
-		tenantID: tenantID,
+		client:    apiClient.IAMClient(),
+		rawClient: apiClient,
+		tenantID:  tenantID,
 	}
 }
 
@@ -113,8 +115,14 @@ func (s *Service) ListGroups(ctx context.Context, req *ListGroupsRequest) (*List
 		query["page"] = fmt.Sprintf("%d", req.Page)
 	}
 
-	path := fmt.Sprintf("tenants/%s/groups", s.tenantID)
-	resp, err := s.client.Get(ctx, path, query)
+	path := fmt.Sprintf("/api/v1/tenants/%s/groups", s.tenantID)
+
+	apiReq := &client.Request{
+		Method: "GET",
+		Path:   path,
+		Query:  query,
+	}
+	resp, err := s.rawClient.Do(ctx, apiReq)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list groups: %w", err)
 	}
@@ -139,8 +147,13 @@ func (s *Service) ListGroups(ctx context.Context, req *ListGroupsRequest) (*List
 
 // GetGroup retrieves a specific IAM group by ID
 func (s *Service) GetGroup(ctx context.Context, id string) (*Group, error) {
-	path := fmt.Sprintf("tenants/%s/groups/%s", s.tenantID, id)
-	resp, err := s.client.Get(ctx, path, nil)
+	path := fmt.Sprintf("/api/v1/tenants/%s/groups/%s", s.tenantID, id)
+
+	req := &client.Request{
+		Method: "GET",
+		Path:   path,
+	}
+	resp, err := s.rawClient.Do(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get group %s: %w", id, err)
 	}
@@ -159,7 +172,7 @@ func (s *Service) GetGroup(ctx context.Context, id string) (*Group, error) {
 
 // CreateGroup creates a new IAM group
 func (s *Service) CreateGroup(ctx context.Context, group *Group) (*Group, error) {
-	path := fmt.Sprintf("tenants/%s/groups", s.tenantID)
+	path := fmt.Sprintf("/api/v1/tenants/%s/groups", s.tenantID)
 
 	// Create a simplified request body without the ID field
 	requestBody := map[string]interface{}{
@@ -174,7 +187,12 @@ func (s *Service) CreateGroup(ctx context.Context, group *Group) (*Group, error)
 		requestBody["members"] = group.Members
 	}
 
-	resp, err := s.client.Post(ctx, path, requestBody)
+	apiReq := &client.Request{
+		Method: "POST",
+		Path:   path,
+		Body:   requestBody,
+	}
+	resp, err := s.rawClient.Do(ctx, apiReq)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create group: %w", err)
 	}
@@ -193,7 +211,7 @@ func (s *Service) CreateGroup(ctx context.Context, group *Group) (*Group, error)
 
 // UpdateGroup updates an existing IAM group
 func (s *Service) UpdateGroup(ctx context.Context, id string, group *Group) (*Group, error) {
-	path := fmt.Sprintf("tenants/%s/groups/%s", s.tenantID, id)
+	path := fmt.Sprintf("/api/v1/tenants/%s/groups/%s", s.tenantID, id)
 
 	// Create a simplified request body without the ID field (same as CreateGroup)
 	requestBody := map[string]interface{}{
@@ -208,7 +226,12 @@ func (s *Service) UpdateGroup(ctx context.Context, id string, group *Group) (*Gr
 		requestBody["members"] = group.Members
 	}
 
-	resp, err := s.client.Put(ctx, path, requestBody)
+	apiReq := &client.Request{
+		Method: "PUT",
+		Path:   path,
+		Body:   requestBody,
+	}
+	resp, err := s.rawClient.Do(ctx, apiReq)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update group %s: %w", id, err)
 	}
@@ -233,8 +256,13 @@ func (s *Service) UpdateGroup(ctx context.Context, id string, group *Group) (*Gr
 
 // DeleteGroup deletes an IAM group
 func (s *Service) DeleteGroup(ctx context.Context, id string) error {
-	path := fmt.Sprintf("tenants/%s/groups/%s", s.tenantID, id)
-	resp, err := s.client.Delete(ctx, path)
+	path := fmt.Sprintf("/api/v1/tenants/%s/groups/%s", s.tenantID, id)
+
+	apiReq := &client.Request{
+		Method: "DELETE",
+		Path:   path,
+	}
+	resp, err := s.rawClient.Do(ctx, apiReq)
 	if err != nil {
 		return fmt.Errorf("failed to delete group %s: %w", id, err)
 	}
@@ -253,7 +281,14 @@ func (s *Service) ListRoles(ctx context.Context, filter string) ([]Role, error) 
 		query["filter"] = filter
 	}
 
-	resp, err := s.client.Get(ctx, "roles", query)
+	path := fmt.Sprintf("/api/v1/tenants/%s/roles", s.tenantID)
+
+	apiReq := &client.Request{
+		Method: "GET",
+		Path:   path,
+		Query:  query,
+	}
+	resp, err := s.rawClient.Do(ctx, apiReq)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list roles: %w", err)
 	}
@@ -274,8 +309,13 @@ func (s *Service) ListRoles(ctx context.Context, filter string) ([]Role, error) 
 
 // GetRole retrieves a specific IAM role by name
 func (s *Service) GetRole(ctx context.Context, name string) (*Role, error) {
-	path := fmt.Sprintf("roles/%s", name)
-	resp, err := s.client.Get(ctx, path, nil)
+	path := fmt.Sprintf("/api/v1/roles/%s", name)
+
+	apiReq := &client.Request{
+		Method: "GET",
+		Path:   path,
+	}
+	resp, err := s.rawClient.Do(ctx, apiReq)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get role %s: %w", name, err)
 	}
@@ -294,7 +334,7 @@ func (s *Service) GetRole(ctx context.Context, name string) (*Role, error) {
 
 // CreateCustomRole creates a new IAM custom role
 func (s *Service) CreateCustomRole(ctx context.Context, role *CustomRole) (*CustomRole, error) {
-	path := fmt.Sprintf("tenants/%s/roles", s.tenantID)
+	path := fmt.Sprintf("/api/v1/tenants/%s/roles", s.tenantID)
 
 	// Create a request body that matches the API specification
 	requestBody := map[string]interface{}{
@@ -326,7 +366,7 @@ func (s *Service) CreateCustomRole(ctx context.Context, role *CustomRole) (*Cust
 
 // GetCustomRole retrieves a specific IAM custom role by name
 func (s *Service) GetCustomRole(ctx context.Context, name string) (*CustomRole, error) {
-	path := fmt.Sprintf("tenants/%s/roles/%s", s.tenantID, name)
+	path := fmt.Sprintf("/api/v1/tenants/%s/roles/%s", s.tenantID, name)
 	resp, err := s.client.Get(ctx, path, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get custom role %s: %w", name, err)
@@ -346,7 +386,7 @@ func (s *Service) GetCustomRole(ctx context.Context, name string) (*CustomRole, 
 
 // UpdateCustomRole updates an existing IAM custom role
 func (s *Service) UpdateCustomRole(ctx context.Context, name string, role *CustomRole) (*CustomRole, error) {
-	path := fmt.Sprintf("tenants/%s/roles/%s", s.tenantID, name)
+	path := fmt.Sprintf("/api/v1/tenants/%s/roles/%s", s.tenantID, name)
 
 	// Create a request body that matches the API specification
 	requestBody := map[string]interface{}{
@@ -383,7 +423,7 @@ func (s *Service) UpdateCustomRole(ctx context.Context, name string, role *Custo
 
 // DeleteCustomRole deletes an IAM custom role
 func (s *Service) DeleteCustomRole(ctx context.Context, name string) error {
-	path := fmt.Sprintf("tenants/%s/roles/%s", s.tenantID, name)
+	path := fmt.Sprintf("/api/v1/tenants/%s/roles/%s", s.tenantID, name)
 	resp, err := s.client.Delete(ctx, path)
 	if err != nil {
 		return fmt.Errorf("failed to delete custom role %s: %w", name, err)
@@ -452,10 +492,16 @@ func (s *Service) GetRoleBinding(ctx context.Context, name string) (*RoleBinding
 		return nil, fmt.Errorf("failed to get group %s: %w", groupID, err)
 	}
 
-	// Get roles for this specific group
-	path := fmt.Sprintf("../v2/tenants/%s/groups/%s/roles", s.tenantID, groupID)
+	// Get roles for this specific group using V2 API
+	path := fmt.Sprintf("/api/v2/tenants/%s/groups/%s/roles", s.tenantID, groupID)
 
-	resp, err := s.client.Get(ctx, path, nil)
+	// Use rawClient to make direct V2 API call
+	req := &client.Request{
+		Method: "GET",
+		Path:   path,
+	}
+	fmt.Printf("[DEBUG GetRoleBinding] Using rawClient for V2 API: path='%s'\n", path)
+	resp, err := s.rawClient.Do(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get roles for group %s: %w", groupID, err)
 	}
@@ -633,11 +679,21 @@ func (s *Service) CreateRoleBinding(ctx context.Context, binding *RoleBinding) (
 	fmt.Printf("API payload: %+v\n", payload)
 
 	// Use V2 group role endpoint: POST /api/v2/tenants/{tenantId}/groups/{groupId}/roles
-	path := fmt.Sprintf("../v2/tenants/%s/groups/%s/roles", s.tenantID, groupID)
+	path := fmt.Sprintf("/api/v2/tenants/%s/groups/%s/roles", s.tenantID, groupID)
 
 	fmt.Printf("API endpoint: %s\n", path)
 
-	resp, err := s.client.Post(ctx, path, payload)
+	// Use rawClient to make direct V2 API call
+	req := &client.Request{
+		Method: "POST",
+		Path:   path,
+		Body:   payload,
+		Headers: map[string]string{
+			"Content-Type": "application/json",
+		},
+	}
+	fmt.Printf("[DEBUG CreateRoleBinding] Using rawClient for V2 API: path='%s'\n", path)
+	resp, err := s.rawClient.Do(ctx, req)
 	if err != nil {
 		fmt.Printf("ERROR: API call failed: %v\n", err)
 		return nil, fmt.Errorf("failed to create role binding for group %s: %w", groupID, err)
@@ -754,9 +810,14 @@ func (s *Service) DeleteRoleBinding(ctx context.Context, name string) error {
 
 	// Try different V2 endpoints to find the correct delete pattern
 	// Option 1: DELETE /api/v2/tenants/{tenantId}/groups/{groupId}/roles/{roleId}
-	path := fmt.Sprintf("../v2/tenants/%s/groups/%s/roles/%s", s.tenantID, groupID, roleId)
+	path := fmt.Sprintf("/api/v2/tenants/%s/groups/%s/roles/%s", s.tenantID, groupID, roleId)
 
-	resp, err := s.client.Delete(ctx, path)
+	// Use rawClient to make direct V2 API call
+	req := &client.Request{
+		Method: "DELETE",
+		Path:   path,
+	}
+	resp, err := s.rawClient.Do(ctx, req)
 	if err != nil {
 		return fmt.Errorf("failed to delete role binding %s: %w", name, err)
 	}
@@ -772,9 +833,18 @@ func (s *Service) DeleteRoleBinding(ctx context.Context, name string) error {
 			"bindings": []string{}, // Empty bindings might remove the role
 		}
 
-		postPath := fmt.Sprintf("../v2/tenants/%s/groups/%s/roles", s.tenantID, groupID)
+		postPath := fmt.Sprintf("/api/v2/tenants/%s/groups/%s/roles", s.tenantID, groupID)
 
-		postResp, postErr := s.client.Post(ctx, postPath, payload)
+		// Use rawClient to make direct V2 API call
+		postReq := &client.Request{
+			Method: "POST",
+			Path:   postPath,
+			Body:   payload,
+			Headers: map[string]string{
+				"Content-Type": "application/json",
+			},
+		}
+		postResp, postErr := s.rawClient.Do(ctx, postReq)
 		if postErr != nil {
 			return fmt.Errorf("failed to remove role binding %s via POST method: %w", name, postErr)
 		}
@@ -808,9 +878,14 @@ type SetResourceDto struct {
 
 // SetResource creates or updates an IAM resource using PUT endpoint
 func (s *Service) SetResource(ctx context.Context, id string, dto *SetResourceDto) (*Resource, error) {
-	path := fmt.Sprintf("tenants/%s/resources/%s", s.tenantID, id)
+	path := fmt.Sprintf("/api/v1/tenants/%s/resources/%s", s.tenantID, id)
 
-	resp, err := s.client.Put(ctx, path, dto)
+	apiReq := &client.Request{
+		Method: "PUT",
+		Path:   path,
+		Body:   dto,
+	}
+	resp, err := s.rawClient.Do(ctx, apiReq)
 	if err != nil {
 		return nil, fmt.Errorf("failed to set resource %s: %w", id, err)
 	}
@@ -829,8 +904,13 @@ func (s *Service) SetResource(ctx context.Context, id string, dto *SetResourceDt
 
 // GetResource retrieves a specific IAM resource by ID
 func (s *Service) GetResource(ctx context.Context, id string) (*Resource, error) {
-	path := fmt.Sprintf("tenants/%s/resources/%s", s.tenantID, id)
-	resp, err := s.client.Get(ctx, path, nil)
+	path := fmt.Sprintf("/api/v1/tenants/%s/resources/%s", s.tenantID, id)
+
+	apiReq := &client.Request{
+		Method: "GET",
+		Path:   path,
+	}
+	resp, err := s.rawClient.Do(ctx, apiReq)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get resource %s: %w", id, err)
 	}
@@ -849,8 +929,13 @@ func (s *Service) GetResource(ctx context.Context, id string) (*Resource, error)
 
 // DeleteResource deletes an IAM resource
 func (s *Service) DeleteResource(ctx context.Context, id string) error {
-	path := fmt.Sprintf("tenants/%s/resources/%s", s.tenantID, id)
-	resp, err := s.client.Delete(ctx, path)
+	path := fmt.Sprintf("/api/v1/tenants/%s/resources/%s", s.tenantID, id)
+
+	apiReq := &client.Request{
+		Method: "DELETE",
+		Path:   path,
+	}
+	resp, err := s.rawClient.Do(ctx, apiReq)
 	if err != nil {
 		return fmt.Errorf("failed to delete resource %s: %w", id, err)
 	}
@@ -886,8 +971,14 @@ func (s *Service) GetResources(ctx context.Context, req *GetResourcesRequest) (*
 		}
 	}
 
-	path := fmt.Sprintf("tenants/%s/resources", s.tenantID)
-	resp, err := s.client.Get(ctx, path, query)
+	path := fmt.Sprintf("/api/v1/tenants/%s/resources", s.tenantID)
+
+	apiReq := &client.Request{
+		Method: "GET",
+		Path:   path,
+		Query:  query,
+	}
+	resp, err := s.rawClient.Do(ctx, apiReq)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list resources: %w", err)
 	}
@@ -908,4 +999,51 @@ func (s *Service) GetResources(ctx context.Context, req *GetResourcesRequest) (*
 	}
 
 	return result, nil
+}
+
+// AddRoleToGroup adds a role to a group using the V2 API
+func (s *Service) AddRoleToGroup(ctx context.Context, groupID, roleID string, isCustom bool, bindings []string) error {
+	// Format the role ID correctly based on whether it's custom
+	formattedRoleID := roleID
+	if isCustom && !strings.HasPrefix(roleID, "custom.") {
+		formattedRoleID = "custom." + roleID
+	}
+
+	// Use provided bindings or default to all resources
+	if len(bindings) == 0 {
+		bindings = []string{"*"} // Default binding to all resources
+	}
+
+	// Create the payload for the V2 API with required bindings array
+	payload := map[string]interface{}{
+		"roleId":   formattedRoleID,
+		"isCustom": isCustom,
+		"bindings": bindings,
+	}
+
+	// Use the V2 API endpoint: POST /api/v2/tenants/{tenantId}/groups/{groupId}/roles
+	path := fmt.Sprintf("/api/v2/tenants/%s/groups/%s/roles", s.tenantID, groupID)
+
+	// Use raw client to bypass the /api/v1 prefix that ServiceClient adds
+	// This allows us to make direct calls to the V2 API endpoint
+	req := &client.Request{
+		Method: "POST",
+		Path:   path,
+		Body:   payload,
+		Headers: map[string]string{
+			"Content-Type": "application/json",
+		},
+	}
+
+	resp, err := s.rawClient.Do(ctx, req)
+	if err != nil {
+		return fmt.Errorf("failed to add role %s to group %s: %w", roleID, groupID, err)
+	}
+
+	// Check the response for errors
+	if err := client.CheckResponse(resp); err != nil {
+		return fmt.Errorf("API error adding role %s to group %s: %w", roleID, groupID, err)
+	}
+
+	return nil
 }

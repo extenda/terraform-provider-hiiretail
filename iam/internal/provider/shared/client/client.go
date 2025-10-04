@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"time"
 
@@ -29,7 +30,7 @@ type Config struct {
 func DefaultConfig() *Config {
 	return &Config{
 		BaseURL:      "https://iam-api.retailsvc.com",
-		IAMEndpoint:  "/api/v1",
+		IAMEndpoint:  "/api/v1", // V1 API prefix for most IAM resources (groups, roles, custom roles, resources)
 		CCCEndpoint:  "/ccc/v1",
 		UserAgent:    "terraform-provider-hiiretail/1.0.0",
 		Timeout:      30 * time.Second,
@@ -157,6 +158,7 @@ func (c *Client) Do(ctx context.Context, req *Request) (*Response, error) {
 func (c *Client) buildURL(path string) *url.URL {
 	u := *c.baseURL // Copy
 	u.Path = strings.TrimSuffix(u.Path, "/") + "/" + strings.TrimPrefix(path, "/")
+	fmt.Fprintf(os.Stderr, "[DEBUG buildURL] Input path: '%s', BaseURL: '%s', Final URL: '%s'\n", path, c.baseURL.String(), u.String())
 	return &u
 }
 
@@ -252,10 +254,12 @@ type ServiceClient struct {
 
 // Do executes a request with the service endpoint prefix
 func (sc *ServiceClient) Do(ctx context.Context, req *Request) (*Response, error) {
+	originalPath := req.Path
 	// Prefix path with service endpoint
 	req.Path = strings.TrimSuffix(sc.endpoint, "/") + "/" + strings.TrimPrefix(req.Path, "/")
 
-	// Debug logging for URL construction
+	fmt.Fprintf(os.Stderr, "[DEBUG ServiceClient.Do] Service: '%s', Endpoint: '%s', Original path: '%s', Final path: '%s'\n",
+		sc.service, sc.endpoint, originalPath, req.Path)
 
 	return sc.client.Do(ctx, req)
 }
