@@ -30,9 +30,23 @@ variable "tenant_id" {
 }
 
 resource "hiiretail_iam_group" "test_group" {
-  name        = "testShayneGroup"
-  description = "This is my second description"
+  name        = "finance-team"
+  description = "Finance team members who can approve reconciliations"
   members     = []
+}
+
+resource "hiiretail_iam_custom_role" "test_custom_role" {
+  id          = "custom.ReconciliationApprover"
+  name        = "Reconciliation_Approver"
+  description = "Role for users who can approve financial reconciliations and view related reports"
+  
+  # Define permissions for reconciliation approval workflow
+  permissions = [
+    {
+      id = "rec.reconciliations.approve"
+      attributes = {}
+    }
+  ]
 }
 
 resource "hiiretail_iam_resource" "test_bu" {
@@ -43,19 +57,18 @@ resource "hiiretail_iam_resource" "test_bu" {
   })
 }
 
-resource "hiiretail_iam_role_binding" "test_role_binding" {
-  # group ID for the role binding
+resource "hiiretail_iam_role_binding" "reconciliation_approvers" {
+  # Enhanced structure: Use group_id instead of name
   group_id = hiiretail_iam_group.test_group.id
   
-  # Enhanced schema - using roles array with resource bindings
-  roles = [
-    {
-      id = "custom.ReconciliationApprover"  # Use existing custom role
-      bindings = [
-        hiiretail_iam_resource.test_bu.id  # Reference to our business unit resource
-      ]
-    }
-  ]
+  # Enhanced structure: Each role contains its own bindings
+  # This allows role-specific bindings in a single resource!
+  roles = [{
+    id = hiiretail_iam_custom_role.test_custom_role.id
+    bindings = [
+      hiiretail_iam_resource.test_bu.id
+    ]
+  }]
 }
 
 output "test_bu_resource" {
