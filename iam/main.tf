@@ -29,6 +29,18 @@ variable "tenant_id" {
   default     = "CIR7nQwtS0rA6t0S6ejd"
 }
 
+resource "hiiretail_iam_custom_role" "test_custom_role" {
+  id          = "ReconciliationApprover"
+  name        = "ReconciliationApprover"
+  description = "Role for approving reconciliations"
+
+  permissions = [
+    {
+      id = "rec.reconciliations.approve"
+    }
+  ]
+}
+
 resource "hiiretail_iam_group" "test_group" {
   name        = "testShayneGroup"
   description = "This is my second description"
@@ -46,11 +58,12 @@ resource "hiiretail_iam_resource" "test_bu" {
 resource "hiiretail_iam_role_binding" "test_role_binding" {
   # group ID for the role binding
   group_id = hiiretail_iam_group.test_group.id
+  is_custom = true
   
   # Enhanced schema - using roles array with resource bindings
   roles = [
     {
-      id = "custom.ReconciliationApprover"  # Use existing custom role
+      id = hiiretail_iam_custom_role.test_custom_role.id  # Reference to our custom role
       bindings = [
         hiiretail_iam_resource.test_bu.id  # Reference to our business unit resource
       ]

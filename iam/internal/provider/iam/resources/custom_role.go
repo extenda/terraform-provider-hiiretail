@@ -245,14 +245,35 @@ func (r *CustomRoleResource) Create(ctx context.Context, req resource.CreateRequ
 	if len(createdRole.Permissions) > 0 {
 		permissionElements := make([]attr.Value, len(createdRole.Permissions))
 		for i, permission := range createdRole.Permissions {
-			// Create attributes map for this permission
-			attrMap := make(map[string]attr.Value)
-			if permission.Attributes != nil {
+			// Create attributes map for this permission - set to null if not provided
+			var attributesValue attr.Value
+			
+			// Debug: log what we received from API
+			tflog.Debug(ctx, "Processing permission from API", map[string]interface{}{
+				"permission_id": permission.ID,
+				"attributes_nil": permission.Attributes == nil,
+				"attributes_len": len(permission.Attributes),
+				"attributes_value": permission.Attributes,
+			})
+			
+			if permission.Attributes != nil && len(permission.Attributes) > 0 {
+				attrMap := make(map[string]attr.Value)
 				for k, v := range permission.Attributes {
 					if strVal, ok := v.(string); ok {
 						attrMap[k] = types.StringValue(strVal)
 					}
 				}
+				attributesValue = types.MapValueMust(types.StringType, attrMap)
+				tflog.Debug(ctx, "Setting attributes to MapValueMust", map[string]interface{}{
+					"permission_id": permission.ID,
+					"attr_map": attrMap,
+				})
+			} else {
+				// When attributes are not provided, set to null to match config
+				attributesValue = types.MapNull(types.StringType)
+				tflog.Debug(ctx, "Setting attributes to MapNull", map[string]interface{}{
+					"permission_id": permission.ID,
+				})
 			}
 
 			// Create the permission object
@@ -263,7 +284,7 @@ func (r *CustomRoleResource) Create(ctx context.Context, req resource.CreateRequ
 				},
 				map[string]attr.Value{
 					"id":         types.StringValue(permission.ID),
-					"attributes": types.MapValueMust(types.StringType, attrMap),
+					"attributes": attributesValue,
 				},
 			)
 			permissionElements[i] = permissionObj
@@ -333,14 +354,19 @@ func (r *CustomRoleResource) Read(ctx context.Context, req resource.ReadRequest,
 	if len(role.Permissions) > 0 {
 		permissionElements := make([]attr.Value, len(role.Permissions))
 		for i, permission := range role.Permissions {
-			// Create attributes map for this permission
-			attrMap := make(map[string]attr.Value)
-			if permission.Attributes != nil {
+			// Create attributes map for this permission - set to null if not provided
+			var attributesValue attr.Value
+			if permission.Attributes != nil && len(permission.Attributes) > 0 {
+				attrMap := make(map[string]attr.Value)
 				for k, v := range permission.Attributes {
 					if strVal, ok := v.(string); ok {
 						attrMap[k] = types.StringValue(strVal)
 					}
 				}
+				attributesValue = types.MapValueMust(types.StringType, attrMap)
+			} else {
+				// When attributes are not provided, set to null to match config
+				attributesValue = types.MapNull(types.StringType)
 			}
 
 			// Create the permission object
@@ -351,7 +377,7 @@ func (r *CustomRoleResource) Read(ctx context.Context, req resource.ReadRequest,
 				},
 				map[string]attr.Value{
 					"id":         types.StringValue(permission.ID),
-					"attributes": types.MapValueMust(types.StringType, attrMap),
+					"attributes": attributesValue,
 				},
 			)
 			permissionElements[i] = permissionObj
@@ -450,14 +476,19 @@ func (r *CustomRoleResource) Update(ctx context.Context, req resource.UpdateRequ
 	if len(updatedRole.Permissions) > 0 {
 		permissionElements := make([]attr.Value, len(updatedRole.Permissions))
 		for i, permission := range updatedRole.Permissions {
-			// Create attributes map for this permission
-			attrMap := make(map[string]attr.Value)
-			if permission.Attributes != nil {
+			// Create attributes map for this permission - set to null if not provided
+			var attributesValue attr.Value
+			if permission.Attributes != nil && len(permission.Attributes) > 0 {
+				attrMap := make(map[string]attr.Value)
 				for k, v := range permission.Attributes {
 					if strVal, ok := v.(string); ok {
 						attrMap[k] = types.StringValue(strVal)
 					}
 				}
+				attributesValue = types.MapValueMust(types.StringType, attrMap)
+			} else {
+				// When attributes are not provided, set to null to match config
+				attributesValue = types.MapNull(types.StringType)
 			}
 
 			// Create the permission object
@@ -468,7 +499,7 @@ func (r *CustomRoleResource) Update(ctx context.Context, req resource.UpdateRequ
 				},
 				map[string]attr.Value{
 					"id":         types.StringValue(permission.ID),
-					"attributes": types.MapValueMust(types.StringType, attrMap),
+					"attributes": attributesValue,
 				},
 			)
 			permissionElements[i] = permissionObj

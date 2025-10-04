@@ -347,7 +347,12 @@ func (s *Service) CreateCustomRole(ctx context.Context, role *CustomRole) (*Cust
 		requestBody["name"] = role.Name
 	}
 
-	resp, err := s.client.Post(ctx, path, requestBody)
+	apiReq := &client.Request{
+		Method: "POST",
+		Path:   path,
+		Body:   requestBody,
+	}
+	resp, err := s.rawClient.Do(ctx, apiReq)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create custom role: %w", err)
 	}
@@ -367,7 +372,12 @@ func (s *Service) CreateCustomRole(ctx context.Context, role *CustomRole) (*Cust
 // GetCustomRole retrieves a specific IAM custom role by name
 func (s *Service) GetCustomRole(ctx context.Context, name string) (*CustomRole, error) {
 	path := fmt.Sprintf("/api/v1/tenants/%s/roles/%s", s.tenantID, name)
-	resp, err := s.client.Get(ctx, path, nil)
+
+	apiReq := &client.Request{
+		Method: "GET",
+		Path:   path,
+	}
+	resp, err := s.rawClient.Do(ctx, apiReq)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get custom role %s: %w", name, err)
 	}
@@ -398,7 +408,12 @@ func (s *Service) UpdateCustomRole(ctx context.Context, name string, role *Custo
 		requestBody["name"] = role.Name
 	}
 
-	resp, err := s.client.Put(ctx, path, requestBody)
+	apiReq := &client.Request{
+		Method: "PUT",
+		Path:   path,
+		Body:   requestBody,
+	}
+	resp, err := s.rawClient.Do(ctx, apiReq)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update custom role %s: %w", name, err)
 	}
@@ -424,7 +439,12 @@ func (s *Service) UpdateCustomRole(ctx context.Context, name string, role *Custo
 // DeleteCustomRole deletes an IAM custom role
 func (s *Service) DeleteCustomRole(ctx context.Context, name string) error {
 	path := fmt.Sprintf("/api/v1/tenants/%s/roles/%s", s.tenantID, name)
-	resp, err := s.client.Delete(ctx, path)
+
+	apiReq := &client.Request{
+		Method: "DELETE",
+		Path:   path,
+	}
+	resp, err := s.rawClient.Do(ctx, apiReq)
 	if err != nil {
 		return fmt.Errorf("failed to delete custom role %s: %w", name, err)
 	}
