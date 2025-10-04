@@ -1023,10 +1023,12 @@ func (s *Service) GetResources(ctx context.Context, req *GetResourcesRequest) (*
 
 // AddRoleToGroup adds a role to a group using the V2 API
 func (s *Service) AddRoleToGroup(ctx context.Context, groupID, roleID string, isCustom bool, bindings []string) error {
-	// Format the role ID correctly based on whether it's custom
-	formattedRoleID := roleID
-	if isCustom && !strings.HasPrefix(roleID, "custom.") {
-		formattedRoleID = "custom." + roleID
+	// For custom roles, verify the role exists before attempting to add it to the group
+	if isCustom {
+		_, err := s.GetCustomRole(ctx, roleID)
+		if err != nil {
+			return fmt.Errorf("custom role %s not found or inaccessible: %w", roleID, err)
+		}
 	}
 
 	// Use provided bindings or default to all resources
@@ -1035,8 +1037,9 @@ func (s *Service) AddRoleToGroup(ctx context.Context, groupID, roleID string, is
 	}
 
 	// Create the payload for the V2 API with required bindings array
+	// For custom roles, use the role ID as-is (no custom. prefix needed for V2 API)
 	payload := map[string]interface{}{
-		"roleId":   formattedRoleID,
+		"roleId":   roleID,
 		"isCustom": isCustom,
 		"bindings": bindings,
 	}

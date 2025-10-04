@@ -27,7 +27,6 @@ func ConvertLegacyToNew(ctx context.Context, model *RoleBindingResourceModel) (*
 		GroupId:     model.Name, // name becomes group_id
 		Description: model.Description,
 		Condition:   model.Condition,
-		IsCustom:    model.IsCustom,
 
 		// Clear legacy properties
 		Name:    types.StringNull(),
@@ -86,7 +85,6 @@ func ConvertNewToLegacy(ctx context.Context, model *RoleBindingResourceModel) (*
 		Name:        model.GroupId, // group_id becomes name
 		Description: model.Description,
 		Condition:   model.Condition,
-		IsCustom:    model.IsCustom,
 
 		// Clear new properties
 		GroupId: types.StringNull(),

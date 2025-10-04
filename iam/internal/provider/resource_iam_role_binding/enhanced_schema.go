@@ -99,6 +99,12 @@ func EnhancedIamRoleBindingResourceSchema(ctx context.Context) schema.Schema {
 								stringvalidator.LengthAtLeast(1),
 							},
 						},
+						"is_custom": schema.BoolAttribute{
+							MarkdownDescription: "Whether this role is a custom role (true) or built-in role (false)",
+							Optional:            true,
+							Computed:            true,
+							Default:             booldefault.StaticBool(false),
+						},
 						"bindings": schema.ListAttribute{
 							MarkdownDescription: "Array of resource IDs that should receive this role",
 							ElementType:         types.StringType,
@@ -122,13 +128,7 @@ func EnhancedIamRoleBindingResourceSchema(ctx context.Context) schema.Schema {
 				Optional:            true,
 			},
 
-			// Backward compatibility support
-			"is_custom": schema.BoolAttribute{
-				MarkdownDescription: "**Legacy compatibility:** Whether the role is custom. This is automatically determined from the roles array in the enhanced structure.",
-				Optional:            true,
-				Computed:            true,
-				Default:             booldefault.StaticBool(false),
-			},
+
 
 			// Legacy bindings compatibility (the old simple string array)
 			"bindings_legacy": schema.ListAttribute{
@@ -153,8 +153,9 @@ func EnhancedIamRoleBindingResourceSchema(ctx context.Context) schema.Schema {
 func GetRoleModelObjectType() basetypes.ObjectType {
 	return types.ObjectType{
 		AttrTypes: map[string]attr.Type{
-			"role_id":   types.StringType,
+			"id":        types.StringType,
 			"is_custom": types.BoolType,
+			"bindings":  types.ListType{ElemType: types.StringType},
 		},
 	}
 }

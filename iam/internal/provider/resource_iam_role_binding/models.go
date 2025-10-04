@@ -26,7 +26,6 @@ type RoleBindingResourceModel struct {
 	Condition   types.String `tfsdk:"condition"`
 
 	// Internal Properties
-	IsCustom       types.Bool   `tfsdk:"is_custom"`
 	RoleId         types.String `tfsdk:"role_id"`         // Legacy compatibility field
 	BindingsLegacy types.List   `tfsdk:"bindings_legacy"` // Legacy compatibility field
 }
@@ -34,8 +33,9 @@ type RoleBindingResourceModel struct {
 // RoleModel represents a single role in the roles array with its specific bindings
 // This enables multiple roles to be assigned with role-specific bindings in a single resource
 type RoleModel struct {
-	Id       types.String `tfsdk:"id"`       // The role identifier
-	Bindings types.List   `tfsdk:"bindings"` // Array of resource IDs that get this role
+	Id       types.String `tfsdk:"id"`        // The role identifier
+	IsCustom types.Bool   `tfsdk:"is_custom"` // Whether this is a custom role
+	Bindings types.List   `tfsdk:"bindings"`  // Array of resource IDs that get this role
 }
 
 // BindingModel represents a single binding in the legacy bindings array (deprecated)

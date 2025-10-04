@@ -58,12 +58,12 @@ resource "hiiretail_iam_resource" "test_bu" {
 resource "hiiretail_iam_role_binding" "test_role_binding" {
   # group ID for the role binding
   group_id = hiiretail_iam_group.test_group.id
-  is_custom = true
   
   # Enhanced schema - using roles array with resource bindings
   roles = [
     {
       id = hiiretail_iam_custom_role.test_custom_role.id  # Reference to our custom role
+      is_custom = true
       bindings = [
         hiiretail_iam_resource.test_bu.id  # Reference to our business unit resource
       ]
