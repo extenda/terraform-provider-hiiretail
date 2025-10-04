@@ -582,10 +582,16 @@ func (r *IamCustomRoleResource) apiResponseToModel(ctx context.Context, apiResp 
 		// This ensures consistency between planned and actual state
 		aliasValue := types.StringNull()
 
+		// Handle attributes - Always set to null when not provided in config to match Terraform expectations
+		// The API response might return empty objects, but if the config doesn't specify attributes,
+		// we should return null to maintain consistency with the planned state
+		var attributesValue types.Object
+		attributesValue = types.ObjectNull(AttributesValue{}.AttributeTypes(ctx))
+
 		permissionsList[i] = PermissionsValue{
 			Id:         types.StringValue(perm.ID),
 			Alias:      aliasValue,
-			Attributes: types.ObjectValueMust(map[string]attr.Type{}, map[string]attr.Value{}), // Create empty object to match {} in config
+			Attributes: attributesValue,
 			state:      attr.ValueStateKnown,
 		}
 	}
