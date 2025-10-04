@@ -129,9 +129,9 @@ func (r *IamRoleBindingResource) Create(ctx context.Context, req resource.Create
 	fmt.Printf("=== ENHANCED: About to add %d roles to group %s ===\n", len(roles), terraformGroupId)
 	var assignedRoles []string
 	for _, role := range roles {
-		// Parse role ID and determine if it's custom
+		// Parse role ID and get custom flag from config
 		roleValue := role.Id.ValueString()
-		isCustom := strings.HasPrefix(roleValue, "custom.") || strings.HasPrefix(roleValue, "roles/custom.")
+		isCustom := role.IsCustom.ValueBool() // Use the is_custom field from config
 		roleId := strings.TrimPrefix(roleValue, "roles/")
 		if isCustom {
 			roleId = strings.TrimPrefix(roleId, "custom.")
@@ -348,9 +348,9 @@ func (r *IamRoleBindingResource) Update(ctx context.Context, req resource.Update
 	fmt.Printf("=== ENHANCED UPDATE: About to add %d roles to group %s ===\n", len(roles), existingGroup.ID)
 	var assignedRoles []string
 	for _, role := range roles {
-		// Parse role ID and determine if it's custom
+		// Parse role ID and get custom flag from config
 		roleValue := role.Id.ValueString()
-		isCustom := strings.HasPrefix(roleValue, "custom.") || strings.HasPrefix(roleValue, "roles/custom.")
+		isCustom := role.IsCustom.ValueBool() // Use the is_custom field from config
 		roleId := strings.TrimPrefix(roleValue, "roles/")
 		if isCustom {
 			roleId = strings.TrimPrefix(roleId, "custom.")
