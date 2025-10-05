@@ -3,6 +3,7 @@ package resource_iam_role_binding
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -130,15 +131,72 @@ func (r *SimpleIamRoleBindingResource) Read(ctx context.Context, req resource.Re
 		return
 	}
 
-	// For now, we'll assume the role binding exists if we can read the state
-	// In a more complete implementation, you might want to verify the role binding
-	// still exists via the API
+	// Parse the composite ID to extract components
+	id := data.ID.ValueString()
+	if id == "" {
+		resp.Diagnostics.AddError(
+			"Error Reading Role Binding",
+			"Role binding ID is empty",
+		)
+		return
+	}
+
+	// Parse the ID: format is "tenantId-groupId-roleId-hash"
+	parts := strings.Split(id, "-")
+	if len(parts) < 4 {
+		resp.Diagnostics.AddError(
+			"Error Reading Role Binding",
+			fmt.Sprintf("Invalid role binding ID format: %s", id),
+		)
+		return
+	}
+
+	tenantId := parts[0]
+	groupId := parts[1]
+	roleId := parts[2]
+	// hash is parts[3] (not needed for parsing)
+
+	// Determine if the role is custom by checking if it exists as a custom role
+	isCustom := false
+
+	// Check if this role exists as a custom role
+	_, err := r.iamService.GetCustomRole(ctx, roleId)
+	if err != nil {
+		// If GetCustomRole fails, it's likely a builtin role
+		tflog.Debug(ctx, "Role not found as custom role, assuming builtin", map[string]interface{}{
+			"role_id": roleId,
+			"error":   err.Error(),
+		})
+		isCustom = false
+	} else {
+		// Role was found as a custom role
+		isCustom = true
+		tflog.Debug(ctx, "Role identified as custom", map[string]interface{}{
+			"role_id": roleId,
+		})
+	}
+
+	tflog.Debug(ctx, "Role type determination complete", map[string]interface{}{
+		"role_id":   roleId,
+		"is_custom": isCustom,
+	})
+
+	// Update the model with parsed data
+	data.TenantID = types.StringValue(tenantId)
+	data.GroupID = types.StringValue(groupId)
+	data.RoleID = types.StringValue(roleId)
+	data.IsCustom = types.BoolValue(isCustom)
+
+	// For bindings, we can't easily reconstruct them from just the ID
+	// So we'll leave them as they were in the original state
+	// In a production system, you might want to fetch them from the API
 
 	tflog.Trace(ctx, "Read simple IAM role binding resource", map[string]interface{}{
-		"id":        data.ID.ValueString(),
-		"group_id":  data.GroupID.ValueString(),
-		"role_id":   data.RoleID.ValueString(),
-		"is_custom": data.IsCustom.ValueBool(),
+		"id":        id,
+		"tenant_id": tenantId,
+		"group_id":  groupId,
+		"role_id":   roleId,
+		"is_custom": isCustom,
 	})
 
 	// Save updated data into Terraform state
@@ -191,9 +249,27 @@ func (r *SimpleIamRoleBindingResource) Delete(ctx context.Context, req resource.
 		"is_custom": isCustom,
 	})
 
-	// Use the RemoveRoleFromGroup method if it exists in the service
-	// For now, we'll assume the role binding is deleted when the resource is destroyed
-	// In a more complete implementation, you would call the API to remove the role from the group
+	// Call the IAM service to remove the role from the group
+	err := r.removeRoleFromGroup(ctx, groupId, roleId, isCustom)
+	if err != nil {
+		// Check if the error is a 404, which means the role binding doesn't exist
+		// This is actually success since the desired state is that it doesn't exist
+		if strings.Contains(err.Error(), "404") || strings.Contains(err.Error(), "not assigned to this group") {
+			tflog.Debug(ctx, "Role binding already removed from group (404 response), treating as successful deletion", map[string]interface{}{
+				"group_id":  groupId,
+				"role_id":   roleId,
+				"is_custom": isCustom,
+				"error":     err.Error(),
+			})
+			return // Success - desired state achieved
+		}
+
+		resp.Diagnostics.AddError(
+			"Error Deleting Role Binding",
+			"Could not delete role binding, unexpected error: "+err.Error(),
+		)
+		return
+	}
 
 	tflog.Trace(ctx, "Deleted simple IAM role binding resource", map[string]interface{}{
 		"id":        data.ID.ValueString(),
@@ -201,6 +277,72 @@ func (r *SimpleIamRoleBindingResource) Delete(ctx context.Context, req resource.
 		"role_id":   roleId,
 		"is_custom": isCustom,
 	})
+}
+
+// removeRoleFromGroup removes a role from a group using the V1 API
+func (r *SimpleIamRoleBindingResource) removeRoleFromGroup(ctx context.Context, groupId, roleId string, isCustom bool) error {
+	// Use the V1 API endpoint: DELETE /api/v1/tenants/{tenantId}/groups/{id}/roles/{roleId}
+	// This endpoint properly supports role removal and has the required permissions
+	path := fmt.Sprintf("/api/v1/tenants/%s/groups/%s/roles/%s", r.client.TenantID(), groupId, roleId)
+
+	tflog.Debug(ctx, "Making DELETE request to remove role from group (V1 API)", map[string]interface{}{
+		"path":      path,
+		"group_id":  groupId,
+		"role_id":   roleId,
+		"is_custom": isCustom,
+	})
+
+	// Build the request with isCustom query parameter if needed
+	req := &client.Request{
+		Method: "DELETE",
+		Path:   path,
+	}
+
+	// Add isCustom query parameter if the role is custom
+	if isCustom {
+		req.Query = map[string]string{
+			"isCustom": "true",
+		}
+	}
+
+	resp, err := r.client.Do(ctx, req)
+	if err != nil {
+		tflog.Error(ctx, "HTTP request failed (V1 API)", map[string]interface{}{
+			"error":    err.Error(),
+			"path":     path,
+			"group_id": groupId,
+			"role_id":  roleId,
+		})
+		return fmt.Errorf("failed to remove role %s from group %s: %w", roleId, groupId, err)
+	}
+
+	tflog.Debug(ctx, "DELETE request completed (V1 API)", map[string]interface{}{
+		"status_code": resp.StatusCode,
+		"path":        path,
+		"group_id":    groupId,
+		"role_id":     roleId,
+	})
+
+	// Check if the request was successful
+	if err := client.CheckResponse(resp); err != nil {
+		tflog.Error(ctx, "DELETE request failed with error response (V1 API)", map[string]interface{}{
+			"error":       err.Error(),
+			"status_code": resp.StatusCode,
+			"path":        path,
+			"group_id":    groupId,
+			"role_id":     roleId,
+		})
+		return fmt.Errorf("failed to remove role %s from group %s: %w", roleId, groupId, err)
+	}
+
+	tflog.Debug(ctx, "Successfully removed role from group (V1 API)", map[string]interface{}{
+		"path":      path,
+		"group_id":  groupId,
+		"role_id":   roleId,
+		"is_custom": isCustom,
+	})
+
+	return nil
 }
 
 func (r *SimpleIamRoleBindingResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
