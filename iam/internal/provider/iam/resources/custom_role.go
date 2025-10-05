@@ -247,15 +247,15 @@ func (r *CustomRoleResource) Create(ctx context.Context, req resource.CreateRequ
 		for i, permission := range createdRole.Permissions {
 			// Create attributes map for this permission - set to null if not provided
 			var attributesValue attr.Value
-			
+
 			// Debug: log what we received from API
 			tflog.Debug(ctx, "Processing permission from API", map[string]interface{}{
-				"permission_id": permission.ID,
-				"attributes_nil": permission.Attributes == nil,
-				"attributes_len": len(permission.Attributes),
+				"permission_id":    permission.ID,
+				"attributes_nil":   permission.Attributes == nil,
+				"attributes_len":   len(permission.Attributes),
 				"attributes_value": permission.Attributes,
 			})
-			
+
 			if permission.Attributes != nil && len(permission.Attributes) > 0 {
 				attrMap := make(map[string]attr.Value)
 				for k, v := range permission.Attributes {
@@ -266,7 +266,7 @@ func (r *CustomRoleResource) Create(ctx context.Context, req resource.CreateRequ
 				attributesValue = types.MapValueMust(types.StringType, attrMap)
 				tflog.Debug(ctx, "Setting attributes to MapValueMust", map[string]interface{}{
 					"permission_id": permission.ID,
-					"attr_map": attrMap,
+					"attr_map":      attrMap,
 				})
 			} else {
 				// When attributes are not provided, set to null to match config

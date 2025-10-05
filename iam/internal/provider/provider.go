@@ -205,7 +205,7 @@ func (p *HiiRetailProvider) Resources(ctx context.Context) []func() resource.Res
 		// IAM resources
 		resources.NewGroupResource,
 		resources.NewCustomRoleResource,
-		resource_iam_role_binding.NewIamRoleBindingResource, // Use enhanced role binding resource
+		resource_iam_role_binding.NewSimpleIamRoleBindingResource, // Use simple 1:1 role binding resource
 		resources.NewResourceResource,
 	}
 }
