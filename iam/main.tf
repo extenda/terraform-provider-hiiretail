@@ -55,20 +55,18 @@ resource "hiiretail_iam_resource" "test_bu" {
   })
 }
 
-resource "hiiretail_iam_role_binding" "test_role_binding" {
-  # group ID for the role binding
-  group_id = hiiretail_iam_group.test_group.id
-  
-  # Enhanced schema - using roles array with resource bindings
-  roles = [
-    {
-      id = hiiretail_iam_custom_role.test_custom_role.id  # Reference to our custom role
-      is_custom = true
-      bindings = [
-        hiiretail_iam_resource.test_bu.id  # Reference to our business unit resource
-      ]
-    }
-  ]
+resource "hiiretail_iam_role_binding" "test_custom_role_binding" {
+  group_id  = hiiretail_iam_group.test_group.id
+  role_id   = hiiretail_iam_custom_role.test_custom_role.id
+  is_custom = true
+  bindings  = [hiiretail_iam_resource.test_bu.id]
+}
+
+resource "hiiretail_iam_role_binding" "test_builtin_role_binding" {
+  group_id  = hiiretail_iam_group.test_group.id  
+  role_id   = "rec.manager"
+  is_custom = false
+  bindings  = ["*"]
 }
 
 output "test_bu_resource" {

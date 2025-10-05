@@ -128,8 +128,6 @@ func EnhancedIamRoleBindingResourceSchema(ctx context.Context) schema.Schema {
 				Optional:            true,
 			},
 
-
-
 			// Legacy bindings compatibility (the old simple string array)
 			"bindings_legacy": schema.ListAttribute{
 				MarkdownDescription: "**Internal use only:** Legacy bindings format for backward compatibility",
