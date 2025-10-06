@@ -1,16 +1,31 @@
-# HiiRetail IAM Terraform Provider
+# HiiRetail Terraform Provider
 
-This Terraform provider enables management of HiiRetail IAM resources using Terraform.
+The HiiRetail Terraform provider enables management of HiiRetail platform resources through Infrastructure as Code. This provider supports Identity and Access Management (IAM) operations including user groups, custom roles, resources, and role bindings.
 
-## Features
+## 📚 Documentation
 
-- **OIDC Client Credentials Authentication**: Secure authentication using OIDC client credentials flow
-- **Configurable Base URL**: Optional base_url parameter to connect to different API endpoints
-- **Comprehensive Error Handling**: Clear error messages for configuration and authentication issues
-- **Thorough Testing**: Full test coverage including unit tests and integration tests
-- **Group Management**: Complete CRUD operations for IAM groups with validation and error handling
+**Complete documentation is available in the [`docs/`](docs/) directory:**
 
-## Requirements
+- **[Provider Overview](docs/index.md)** - Configuration and authentication
+- **[Getting Started Guide](docs/guides/getting-started.md)** - Quick setup tutorial
+- **[Authentication Guide](docs/guides/authentication.md)** - Detailed auth setup
+- **Resource Documentation:**
+  - [Custom Roles](docs/resources/iam_custom_role.md)
+  - [Groups](docs/resources/iam_group.md)
+  - [Resources](docs/resources/iam_resource.md) 
+  - [Role Bindings](docs/resources/iam_role_binding.md)
+- **[Examples](examples/)** - Working Terraform configurations
+
+## 🚀 Features
+
+- **Registry-Ready**: Terraform Registry compliant documentation and structure
+- **OAuth2 Authentication**: Secure client credentials flow with automatic token management
+- **Comprehensive IAM Management**: Groups, custom roles, resources, and role bindings
+- **Auto-Generated Documentation**: Schema docs generated with terraform-plugin-docs
+- **Working Examples**: Validated examples for all resources
+- **Error Handling**: Clear error messages and validation
+
+## 📋 Requirements
 
 - Terraform >= 1.0
 - Go >= 1.21 (for development)
