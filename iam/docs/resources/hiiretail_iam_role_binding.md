@@ -1,3 +1,7 @@
+---
+subcategory: "IAM Management"
+---
+
 # hiiretail_iam_role_binding Resource
 
 The `hiiretail_iam_role_binding` resource manages role bindings in the HiiRetail IAM system, allowing you to assign roles to users, groups, or service accounts.

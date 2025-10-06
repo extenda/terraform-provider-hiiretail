@@ -10,6 +10,8 @@ import (
 	"github.com/extenda/hiiretail-terraform-providers/hiiretail/internal/provider"
 )
 
+//go:generate go run github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs
+
 var (
 	version string = "dev"
 )

@@ -1,3 +1,7 @@
+---
+subcategory: "IAM Management"
+---
+
 # hiiretail_iam_resource
 
 Provides a HiiRetail IAM resource for managing granular access control within your tenant. Resources represent logical entities in your system (stores, departments, applications, etc.) that can be referenced in role-based access control (RBAC) policies.
