@@ -1,6 +1,8 @@
 # HiiRetail Terraform Provider
 
-The HiiRetail Terraform provider | Parameter | Type | Required | Description |
+The HiiRetail Terraform provider
+
+| Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `tenant_id` | string | **No*** | Tenant ID to use for all IAM API requests |
 | `client_id` | string | **No*** | OIDC client ID for IAM API authentication |
