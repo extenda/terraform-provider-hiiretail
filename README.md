@@ -39,16 +39,14 @@ The HiiRetail Terraform provider enables management of HiiRetail platform resour
 terraform {
   required_providers {
     hiiretail = {
-      source = "extenda/hiiretail"
+      source = "registry.terraform.io/extenda/hiiretail"
     }
   }
 }
 
 provider "hiiretail" {
-  tenant_id     = "your-tenant-id"
-  client_id     = "your-oidc-client-id"
-  client_secret = "your-oidc-client-secret"
-  base_url      = "https://custom-api.example.com" # Optional, defaults to https://iam-api.retailsvc.com
+  # Authentication will use precedence: terraform.tfvars → TF_VAR_* → HIIRETAIL_* → error
+  # No explicit configuration needed when using environment variables
 }
 ```
 
@@ -56,9 +54,9 @@ provider "hiiretail" {
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `tenant_id` | string | Yes | Tenant ID to use for all IAM API requests |
-| `client_id` | string | Yes | OIDC client ID for IAM API authentication |
-| `client_secret` | string | Yes | OIDC client secret for IAM API authentication (sensitive) |
+| `tenant_id` | string | No | Tenant ID to use for all IAM API requests |
+| `client_id` | string | No | OIDC client ID for IAM API authentication |
+| `client_secret` | string | No | OIDC client secret for IAM API authentication (sensitive) |
 | `base_url` | string | No | Base URL of the IAM API (defaults to https://iam-api.retailsvc-test.com) |
 
 > **📖 For detailed authentication information including test credentials, see the [Authentication Guide](docs/guides/authentication.md)**
