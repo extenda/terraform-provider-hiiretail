@@ -20,6 +20,7 @@ The HiiRetail Terraform provider enables management of HiiRetail platform resour
 
 - **Registry-Ready**: Terraform Registry compliant documentation and structure
 - **OAuth2 Authentication**: Secure client credentials flow with automatic token management
+- **Flexible Authentication**: Multiple credential sources with precedence (terraform.tfvars → TF_VAR_* → HIIRETAIL_*)
 - **Comprehensive IAM Management**: Groups, custom roles, resources, and role bindings
 - **Auto-Generated Documentation**: Schema docs generated with terraform-plugin-docs
 - **Working Examples**: Validated examples for all resources
@@ -64,22 +65,49 @@ provider "hiiretail" {
 
 ### Authentication
 
-The provider uses OIDC client credentials flow for authentication. The authentication process:
+The provider uses OAuth2 client credentials flow for authentication. The authentication process:
 
 1. Uses the provided `client_id` and `client_secret` to obtain an access token
 2. Automatically refreshes tokens when they expire
 3. Includes the access token in all API requests
 
+**Authentication Sources**: The provider supports multiple credential sources with a clear precedence order (terraform.tfvars → TF_VAR_* → HIIRETAIL_* → error). See the [Authentication Guide](docs/guides/authentication.md) for detailed configuration options.
+
 ### Environment Variables
 
-You can also configure the provider using environment variables:
+The provider supports multiple environment variable formats with a clear precedence order:
 
+#### Authentication Precedence
+
+1. **Terraform Configuration** (terraform.tfvars or provider block) - Highest precedence
+2. **TF_VAR_* Environment Variables** (standard Terraform pattern) - Medium precedence  
+3. **HIIRETAIL_* Environment Variables** (provider-specific pattern) - Low precedence
+4. **Error** - When no credentials are found
+
+#### TF_VAR Format (Standard Terraform)
 ```bash
 export TF_VAR_tenant_id="your-tenant-id"
 export TF_VAR_client_id="your-oidc-client-id"
 export TF_VAR_client_secret="your-oidc-client-secret"
 export TF_VAR_base_url="https://custom-api.example.com"
+export TF_VAR_timeout_seconds="30"
+export TF_VAR_max_retries="3"
 ```
+
+#### HIIRETAIL Format (Provider-Specific)
+```bash
+export HIIRETAIL_TENANT_ID="your-tenant-id"
+export HIIRETAIL_CLIENT_ID="your-oidc-client-id"
+export HIIRETAIL_CLIENT_SECRET="your-oidc-client-secret"
+export HIIRETAIL_BASE_URL="https://custom-api.example.com"
+export HIIRETAIL_TIMEOUT_SECONDS="30"
+export HIIRETAIL_MAX_RETRIES="3"
+```
+
+This flexible authentication system allows for:
+- **Local Development**: Use terraform.tfvars files
+- **CI/CD Pipelines**: Use TF_VAR_* variables following Terraform conventions
+- **Environment-Specific**: Use HIIRETAIL_* variables for provider-specific setups
 
 ## Resources
 

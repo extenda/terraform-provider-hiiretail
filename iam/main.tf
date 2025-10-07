@@ -7,26 +7,8 @@ terraform {
 }
 
 provider "hiiretail" {
-  client_id     = var.client_id
-  client_secret = var.client_secret
-  tenant_id     = var.tenant_id
-}
-
-variable "client_id" {
-  description = "OAuth2 client ID"
-  type        = string
-}
-
-variable "client_secret" {
-  description = "OAuth2 client secret"
-  type        = string
-  sensitive   = true
-}
-
-variable "tenant_id" {
-  description = "Tenant ID"
-  type        = string
-  default     = "your-tenant-id"
+  # Authentication will use precedence: terraform.tfvars → TF_VAR_* → HIIRETAIL_* → error
+  # No explicit configuration needed when using environment variables
 }
 
 resource "hiiretail_iam_custom_role" "test_custom_role" {
