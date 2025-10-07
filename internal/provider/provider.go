@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -227,63 +228,109 @@ func New(version string) func() provider.Provider {
 }
 
 // buildAuthConfig creates an AuthClientConfig from provider configuration and environment variables
+// Precedence order: 1. terraform.tfvars 2. TF_VAR_* env vars 3. HIIRETAIL_* env vars 4. error
 func buildAuthConfig(ctx context.Context, data *HiiRetailProviderModel) (*auth.AuthClientConfig, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	config := &auth.AuthClientConfig{}
 
-	// Get tenant ID from config or environment
+	// Get tenant ID with precedence: terraform.tfvars → TF_VAR_* → HIIRETAIL_* → error
 	if !data.TenantID.IsNull() && !data.TenantID.IsUnknown() {
 		config.TenantID = data.TenantID.ValueString()
+	} else if tfVarTenantID := os.Getenv("TF_VAR_tenant_id"); tfVarTenantID != "" {
+		config.TenantID = tfVarTenantID
+	} else if hiiRetailTenantID := os.Getenv("HIIRETAIL_TENANT_ID"); hiiRetailTenantID != "" {
+		config.TenantID = hiiRetailTenantID
 	} else {
-		config.TenantID = os.Getenv("HIIRETAIL_TENANT_ID")
+		diags.AddError(
+			"Missing Tenant ID",
+			"Tenant ID must be configured via terraform.tfvars, TF_VAR_tenant_id environment variable, or HIIRETAIL_TENANT_ID environment variable",
+		)
 	}
 
-	// Get client ID from config or environment
+	// Get client ID with precedence: terraform.tfvars → TF_VAR_* → HIIRETAIL_* → error
 	if !data.ClientID.IsNull() && !data.ClientID.IsUnknown() {
 		config.ClientID = data.ClientID.ValueString()
+	} else if tfVarClientID := os.Getenv("TF_VAR_client_id"); tfVarClientID != "" {
+		config.ClientID = tfVarClientID
+	} else if hiiRetailClientID := os.Getenv("HIIRETAIL_CLIENT_ID"); hiiRetailClientID != "" {
+		config.ClientID = hiiRetailClientID
 	} else {
-		config.ClientID = os.Getenv("HIIRETAIL_CLIENT_ID")
+		diags.AddError(
+			"Missing Client ID",
+			"Client ID must be configured via terraform.tfvars, TF_VAR_client_id environment variable, or HIIRETAIL_CLIENT_ID environment variable",
+		)
 	}
 
-	// Get client secret from config or environment
+	// Get client secret with precedence: terraform.tfvars → TF_VAR_* → HIIRETAIL_* → error
 	if !data.ClientSecret.IsNull() && !data.ClientSecret.IsUnknown() {
 		config.ClientSecret = data.ClientSecret.ValueString()
+	} else if tfVarClientSecret := os.Getenv("TF_VAR_client_secret"); tfVarClientSecret != "" {
+		config.ClientSecret = tfVarClientSecret
+	} else if hiiRetailClientSecret := os.Getenv("HIIRETAIL_CLIENT_SECRET"); hiiRetailClientSecret != "" {
+		config.ClientSecret = hiiRetailClientSecret
 	} else {
-		config.ClientSecret = os.Getenv("HIIRETAIL_CLIENT_SECRET")
+		diags.AddError(
+			"Missing Client Secret",
+			"Client Secret must be configured via terraform.tfvars, TF_VAR_client_secret environment variable, or HIIRETAIL_CLIENT_SECRET environment variable",
+		)
 	}
 
 	// Set hardcoded auth URL for HiiRetail
 	config.TokenURL = "https://auth.retailsvc.com/oauth2/token"
 
-	// Get scopes from config or default
+	// Get scopes with precedence: terraform.tfvars → TF_VAR_* → HIIRETAIL_* → default
 	if !data.Scopes.IsNull() && !data.Scopes.IsUnknown() {
 		scopes := make([]string, 0, len(data.Scopes.Elements()))
 		diags.Append(data.Scopes.ElementsAs(ctx, &scopes, false)...)
 		config.Scopes = scopes
+	} else if tfVarScopes := os.Getenv("TF_VAR_scopes"); tfVarScopes != "" {
+		config.Scopes = strings.Split(tfVarScopes, ",")
+	} else if hiiRetailScopes := os.Getenv("HIIRETAIL_SCOPES"); hiiRetailScopes != "" {
+		config.Scopes = strings.Split(hiiRetailScopes, ",")
 	} else {
-		scopesEnv := os.Getenv("HIIRETAIL_SCOPES")
-		if scopesEnv != "" {
-			config.Scopes = strings.Split(scopesEnv, ",")
-		} else {
-			config.Scopes = []string{
-				"IAM:create:roles", "IAM:read:roles", "IAM:update:roles", "IAM:delete:roles",
-				"IAM:create:groups", "IAM:read:groups", "IAM:update:groups", "IAM:delete:groups",
-				"IAM:create:role_bindings", "IAM:read:role_bindings", "IAM:update:role_bindings", "IAM:delete:role_bindings",
-				"iam.group.list-roles", // Specific permission for V2 GET /api/v2/tenants/{tenantId}/groups/{id}/roles
-			} // Default scopes with granular IAM permissions
-		}
+		config.Scopes = []string{
+			"IAM:create:roles", "IAM:read:roles", "IAM:update:roles", "IAM:delete:roles",
+			"IAM:create:groups", "IAM:read:groups", "IAM:update:groups", "IAM:delete:groups",
+			"IAM:create:role_bindings", "IAM:read:role_bindings", "IAM:update:role_bindings", "IAM:delete:role_bindings",
+			"iam.group.list-roles", // Specific permission for V2 GET /api/v2/tenants/{tenantId}/groups/{id}/roles
+		} // Default scopes with granular IAM permissions
 	}
 
-	// Set default timeout and retries (using provider-level settings from client config)
+	// Set timeout with precedence: terraform.tfvars → TF_VAR_* → HIIRETAIL_* → default
 	if !data.TimeoutSeconds.IsNull() && !data.TimeoutSeconds.IsUnknown() {
 		config.Timeout = time.Duration(data.TimeoutSeconds.ValueInt64()) * time.Second
+	} else if tfVarTimeout := os.Getenv("TF_VAR_timeout_seconds"); tfVarTimeout != "" {
+		if timeoutVal, err := strconv.ParseInt(tfVarTimeout, 10, 64); err == nil {
+			config.Timeout = time.Duration(timeoutVal) * time.Second
+		} else {
+			config.Timeout = 30 * time.Second // Default on parse error
+		}
+	} else if hiiRetailTimeout := os.Getenv("HIIRETAIL_TIMEOUT_SECONDS"); hiiRetailTimeout != "" {
+		if timeoutVal, err := strconv.ParseInt(hiiRetailTimeout, 10, 64); err == nil {
+			config.Timeout = time.Duration(timeoutVal) * time.Second
+		} else {
+			config.Timeout = 30 * time.Second // Default on parse error
+		}
 	} else {
 		config.Timeout = 30 * time.Second // Default timeout
 	}
 
+	// Set max retries with precedence: terraform.tfvars → TF_VAR_* → HIIRETAIL_* → default
 	if !data.MaxRetries.IsNull() && !data.MaxRetries.IsUnknown() {
 		config.MaxRetries = int(data.MaxRetries.ValueInt64())
+	} else if tfVarRetries := os.Getenv("TF_VAR_max_retries"); tfVarRetries != "" {
+		if retriesVal, err := strconv.Atoi(tfVarRetries); err == nil {
+			config.MaxRetries = retriesVal
+		} else {
+			config.MaxRetries = 3 // Default on parse error
+		}
+	} else if hiiRetailRetries := os.Getenv("HIIRETAIL_MAX_RETRIES"); hiiRetailRetries != "" {
+		if retriesVal, err := strconv.Atoi(hiiRetailRetries); err == nil {
+			config.MaxRetries = retriesVal
+		} else {
+			config.MaxRetries = 3 // Default on parse error
+		}
 	} else {
 		config.MaxRetries = 3 // Default max retries
 	}
