@@ -22,7 +22,7 @@ There is a critical inconsistency in the V2 Group Role endpoints that prevents p
 
 1. **Create Role Binding** (POST):
    ```http
-   POST /api/v2/tenants/CIR7nQwtS0rA6t0S6ejd/groups/EYNaCiYX6WFmoPxXCGMf/roles
+   POST /api/v2/tenants/your-tenant-id/groups/EYNaCiYX6WFmoPxXCGMf/roles
    Content-Type: application/json
    
    {
@@ -35,7 +35,7 @@ There is a critical inconsistency in the V2 Group Role endpoints that prevents p
 
 2. **Retrieve Role Bindings** (GET):
    ```http
-   GET /api/v2/tenants/CIR7nQwtS0rA6t0S6ejd/groups/EYNaCiYX6WFmoPxXCGMf/roles
+   GET /api/v2/tenants/your-tenant-id/groups/EYNaCiYX6WFmoPxXCGMf/roles
    ```
    **Response**: HTTP 200 with empty array `[]` ❌ **Should contain the created role binding**
 
@@ -57,7 +57,7 @@ After a successful POST operation, the GET endpoint should return:
 ## Evidence & Testing
 
 ### Test Case
-- **Tenant ID**: `CIR7nQwtS0rA6t0S6ejd`
+- **Tenant ID**: `your-tenant-id`
 - **Group ID**: `EYNaCiYX6WFmoPxXCGMf`
 - **Role ID**: `custom-roles/custom.TerraformTestShayne`
 

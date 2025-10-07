@@ -1,0 +1,88 @@
+terraform {
+  required_providers {
+    hiiretail = {
+      source = "registry.terraform.io/extenda/hiiretail"
+    }
+  }
+}
+
+provider "hiiretail" {
+  client_id     = var.client_id
+  client_secret = var.client_secret
+  tenant_id     = var.tenant_id
+}
+
+# Basic custom role
+resource "hiiretail_iam_custom_role" "approver" {
+  id          = "ReconciliationApprover"
+  name        = "Reconciliation Approver"
+  description = "Role for approving reconciliations"
+
+  permissions = [
+    {
+      id = "rec.reconciliations.approve"
+    }
+  ]
+}
+
+# Custom role with multiple permissions
+resource "hiiretail_iam_custom_role" "finance_manager" {
+  id          = "FinanceManager"
+  name        = "Finance Manager"
+  description = "Finance management role with comprehensive permissions"
+
+  permissions = [
+    {
+      id = "rec.reconciliations.approve"
+    },
+    {
+      id = "fin.reports.view"
+    },
+    {
+      id = "fin.transactions.manage"
+    }
+  ]
+}
+
+# Custom role with computed name
+resource "hiiretail_iam_custom_role" "custom_role" {
+  id = "CustomRole001"
+  # name will be computed from the ID if not specified
+  description = "Auto-named custom role"
+
+  permissions = [
+    {
+      id = "custom.permissions.manage"
+    }
+  ]
+}
+
+# Variables
+variable "client_id" {
+  description = "HiiRetail OAuth2 client ID"
+  type        = string
+  sensitive   = true
+}
+
+variable "client_secret" {
+  description = "HiiRetail OAuth2 client secret"
+  type        = string
+  sensitive   = true
+}
+
+variable "tenant_id" {
+  description = "Tenant ID for scoping HiiRetail resources"
+  type        = string
+  default     = "your-tenant-id"
+}
+
+# Outputs
+output "approver_role_id" {
+  description = "ID of the created approver role"
+  value       = hiiretail_iam_custom_role.approver.id
+}
+
+output "manager_role_id" {
+  description = "ID of the created finance manager role"
+  value       = hiiretail_iam_custom_role.finance_manager.id
+}

@@ -28,8 +28,8 @@
 - **Status**: OAuth2 server is responding correctly, but rejecting our credentials
 
 ### Credentials Tested
-1. **Original base64**: `b3duZXI6IHNoYXluZQpzZnc6IGhpaXRmQDAuMUBDSVI3blF3dFMwckE2dDBTNmVqZAp0aWQ6IENJUjduUXd0UzByQTZ0MFM2ZWpkCg`
-2. **Decoded format**: `hiitf@0.1@CIR7nQwtS0rA6t0S6ejd`
+1. **Original base64**: `your-base64-encoded-client-id`
+2. **Decoded format**: `hiitf@0.1@your-tenant-id`
 3. **Both as client_id and client_secret**
 
 ### Next Steps
@@ -66,9 +66,9 @@ The OAuth2 authentication system is **production-ready** and includes:
 
 ### Current Environment Setup
 ```bash
-export HIIRETAIL_TENANT_ID="CIR7nQwtS0rA6t0S6ejd"
-export HIIRETAIL_CLIENT_ID="b3duZXI6IHNoYXluZQpzZnc6IGhpaXRmQDAuMUBDSVI3blF3dFMwckE2dDBTNmVqZAp0aWQ6IENJUjduUXd0UzByQTZ0MFM2ZWpkCg"
-export HIIRETAIL_CLIENT_SECRET="b3duZXI6IHNoYXluZQpzZnc6IGhpaXRmQDAuMUBDSVI3blF3dFMwckE2dDBTNmVqZAp0aWQ6IENJUjduUXd0UzByQTZ0MFM2ZWpkCg"
+export HIIRETAIL_TENANT_ID="your-tenant-id"
+export HIIRETAIL_CLIENT_ID="your-oauth2-client-id"
+export HIIRETAIL_CLIENT_SECRET="your-oauth2-client-secret"
 export HIIRETAIL_AUTH_URL="https://auth.retailsvc.com/oauth2/token"
 export HIIRETAIL_API_URL="https://iam-api.retailsvc.com"
 ```

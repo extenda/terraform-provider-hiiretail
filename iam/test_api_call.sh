@@ -6,9 +6,9 @@
 set -e
 
 # Credentials from terraform.tfvars
-CLIENT_ID="b3duZXI6IHNoYXluZQpzZnc6IGhpaXRmQDAuMUBDSVI3blF3dFMwckE2dDBTNmVqZAp0aWQ6IENJUjduUXd0UzByQTZ0MFM2ZWpkCg"
-CLIENT_SECRET="726143f664f0a38efa96abe33bc0a7487d745ee725171101231c454ea9faa1ba"
-TENANT_ID="CIR7nQwtS0rA6t0S6ejd"
+CLIENT_ID="your-oauth2-client-id"
+CLIENT_SECRET="your-oauth2-client-secret"
+TENANT_ID="your-tenant-id"
 # CORRECT ENDPOINTS: Token from auth.retailsvc.com, API calls to iam-api.retailsvc.com
 TOKEN_URL="https://auth.retailsvc.com/oauth2/token"
 API_BASE_URL="https://iam-api.retailsvc.com"

@@ -3,7 +3,7 @@
 # Test manual role binding creation to match exactly what NodeJS does
 
 # Configuration
-TENANT_ID="CIR7nQwtS0rA6t0S6ejd"
+TENANT_ID="your-tenant-id"
 GROUP_ID="9efOXfSsxwzK7AMddPtZ"
 ROLE_ID="TerraformTest"  # Just the role name, not "custom.TerraformTest"
 

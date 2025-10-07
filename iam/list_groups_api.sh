@@ -3,9 +3,9 @@
 # List all groups to see what actually exists
 
 # Configuration  
-CLIENT_ID="b3duZXI6IHNoYXluZQpzZnc6IGhpaXRmQDAuMUBDSVI3blF3dFMwckE2dDBTNmVqZAp0aWQ6IENJUjduUXd0UzByQTZ0MFM2ZWpkCg"
-CLIENT_SECRET="726143f664f0a38efa96abe33bc0a7487d745ee725171101231c454ea9faa1ba"
-TENANT_ID="CIR7nQwtS0rA6t0S6ejd"
+CLIENT_ID="your-oauth2-client-id"
+CLIENT_SECRET="your-oauth2-client-secret"
+TENANT_ID="your-tenant-id"
 
 echo "=== Listing All Groups ==="
 echo "Tenant ID: $TENANT_ID"
