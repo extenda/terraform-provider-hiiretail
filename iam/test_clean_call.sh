@@ -4,8 +4,8 @@
 
 # Get a fresh token using the exact same credentials as extended_test_api.sh
 echo "Getting token..."
-CLIENT_ID="b3duZXI2IHNoYXluZQpzZnc2IGhpaXRmQDAuMUBDSVI3blF3dFMwckE2dDBTNmVqZAp0aWQ2IENJUjduUXd0UzByQTZ0MFM2ZWpkCg"
-CLIENT_SECRET="726143f664f0a38efa96abe33bc0a7487d745ee725171101231c454ea9faa1ba"
+CLIENT_ID="your-oauth2-client-id"
+CLIENT_SECRET="your-oauth2-client-secret"
 
 TOKEN_RESPONSE=$(curl -s -X POST https://auth.retailsvc.com/oauth2/token \
   -H "Content-Type: application/x-www-form-urlencoded" \
@@ -22,7 +22,7 @@ fi
 
 # Test the exact same call our Go code makes
 echo -e "\nTesting exact Go payload..."
-V2_URL="https://iam-api.retailsvc.com/api/v2/tenants/CIR7nQwtS0rA6t0S6ejd/groups/9efOXfSsxwzK7AMddPtZ/roles"
+V2_URL="https://iam-api.retailsvc.com/api/v2/tenants/your-tenant-id/groups/9efOXfSsxwzK7AMddPtZ/roles"
 
 echo "POST request:"
 curl -v -X POST "$V2_URL" \

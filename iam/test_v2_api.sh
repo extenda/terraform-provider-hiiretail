@@ -3,9 +3,9 @@
 # Test V2 API role assignment manually with correct group ID
 
 # Configuration  
-CLIENT_ID="b3duZXI6IHNoYXluZQpzZnc6IGhpaXRmQDAuMUBDSVI3blF3dFMwckE2dDBTNmVqZAp0aWQ6IENJUjduUXd0UzByQTZ0MFM2ZWpkCg"
-CLIENT_SECRET="726143f664f0a38efa96abe33bc0a7487d745ee725171101231c454ea9faa1ba"
-TENANT_ID="CIR7nQwtS0rA6t0S6ejd"
+CLIENT_ID="your-oauth2-client-id"
+CLIENT_SECRET="your-oauth2-client-secret"
+TENANT_ID="your-tenant-id"
 GROUP_ID="9efOXfSsxwzK7AMddPtZ"  # Correct group ID from terraform state
 ROLE_ID="TerraformTest" # Just the role name for API
 

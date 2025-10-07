@@ -23,10 +23,10 @@ echo "Got token successfully"
 # - Group ID: mUOyAYL4AEPwTsURTAUF 
 # - Role ID: TerraformTest
 # - isCustom: true
-# - API endpoint: ../v2/tenants/CIR7nQwtS0rA6t0S6ejd/groups/mUOyAYL4AEPwTsURTAUF/roles
+# - API endpoint: ../v2/tenants/your-tenant-id/groups/mUOyAYL4AEPwTsURTAUF/roles
 # - Payload: map[isCustom:true roleId:TerraformTest]
 
-TENANT_ID="CIR7nQwtS0rA6t0S6ejd"
+TENANT_ID="your-tenant-id"
 GROUP_ID="mUOyAYL4AEPwTsURTAUF"
 
 echo ""

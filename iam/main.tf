@@ -26,7 +26,7 @@ variable "client_secret" {
 variable "tenant_id" {
   description = "Tenant ID"
   type        = string
-  default     = "CIR7nQwtS0rA6t0S6ejd"
+  default     = "your-tenant-id"
 }
 
 resource "hiiretail_iam_custom_role" "test_custom_role" {

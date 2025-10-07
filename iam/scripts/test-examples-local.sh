@@ -18,9 +18,9 @@ go build -o terraform-provider-hiiretail
 # Create test terraform.tfvars
 TEST_TFVARS="$PROJECT_ROOT/test.tfvars"
 cat > "$TEST_TFVARS" << EOF
-client_id     = "b3duZXI6IHNoYXluZQpzZnc6IGhpaXRmQDAuMUBDSVI3blF3dFMwckE2dDBTNmVqZAp0aWQ6IENJUjduUXd0UzByQTZ0MFM2ZWpkCg"
-client_secret = "726143f664f0a38efa96abe33bc0a7487d745ee725171101231c454ea9faa1ba"
-tenant_id     = "CIR7nQwtS0rA6t0S6ejd"
+client_id     = "your-oauth2-client-id"
+client_secret = "your-oauth2-client-secret"
+tenant_id     = "your-tenant-id"
 EOF
 
 # Test resource examples (these have all dependencies in one file)

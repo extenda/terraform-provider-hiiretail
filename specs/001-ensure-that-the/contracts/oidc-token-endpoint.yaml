@@ -74,7 +74,7 @@ paths:
                   access_token:
                     type: string
                     description: The access token for API authentication
-                    example: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+                    example: "your-jwt-access-token-here"
                   token_type:
                     type: string
                     enum: [Bearer]
@@ -93,7 +93,7 @@ paths:
                     type: string
                     description: Refresh token (optional for client credentials)
               example:
-                access_token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJoaWlyZXRhaWwtdGVycmFmb3JtLXByb3ZpZGVyIiwiaWF0IjoxNjM1MjU2MDAwLCJleHAiOjE2MzUyNTk2MDB9.signature"
+                access_token: "your-jwt-access-token-here"
                 token_type: "Bearer"
                 expires_in: 3600
                 scope: "iam:read iam:write"

@@ -20,7 +20,7 @@ TEST_TFVARS="$PROJECT_ROOT/test.tfvars"
 cat > "$TEST_TFVARS" << EOF
 client_id     = "test-client-id"
 client_secret = "test-client-secret"
-tenant_id     = "CIR7nQwtS0rA6t0S6ejd"
+tenant_id     = "your-tenant-id"
 EOF
 
 # Test provider example
