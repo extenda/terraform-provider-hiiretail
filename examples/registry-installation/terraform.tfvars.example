@@ -1,0 +1,23 @@
+# Example variables for HiiRetail Terraform Provider
+# Copy this file to terraform.tfvars and fill in your actual values
+
+# HiiRetail OAuth2 Client ID
+# Get this from your HiiRetail OAuth2 application configuration
+client_id = "your-oauth2-client-id"
+
+# HiiRetail OAuth2 Client Secret
+# Keep this secret secure - consider using environment variables instead
+client_secret = "your-oauth2-client-secret"
+
+# HiiRetail Tenant ID
+# This scopes all resources to your specific tenant
+tenant_id = "your-tenant-id"
+
+# Optional: Custom API base URL (uncomment if needed)
+# base_url = "https://api.custom.hiiretail.com"
+
+# Optional: Request timeout in seconds (default: 30)
+# timeout_seconds = 60
+
+# Optional: Maximum retries for failed requests (default: 3)
+# max_retries = 5

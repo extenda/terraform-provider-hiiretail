@@ -131,28 +131,79 @@ dev-setup: deps build dev-override
 	@echo "2. Create a test Terraform configuration"
 	@echo "3. Run: terraform init && terraform plan"
 
+# Release validation and testing targets
+validate-release-config:
+	@echo "Validating release configuration..."
+	./test_goreleaser_config.sh
+	./test_github_actions.sh
+	@echo "✅ Release configuration validation complete"
+
+test-build-local:
+	@echo "Testing local build with GoReleaser..."
+	@if command -v goreleaser >/dev/null 2>&1; then \
+		goreleaser build --snapshot --clean --timeout 10m; \
+		./test_build_artifacts.sh; \
+	else \
+		echo "❌ GoReleaser not installed. Install with: brew install goreleaser"; \
+		exit 1; \
+	fi
+	@echo "✅ Local build test complete"
+
+test-release-process:
+	@echo "Testing complete release process..."
+	./test_release_process.sh
+	@echo "✅ Release process test complete"
+
+validate-all-release: validate-release-config test-build-local test-release-process
+	@echo "🎉 All release validation tests passed!"
+
+# Install release tooling
+install-release-tools:
+	@echo "Installing release tooling..."
+	@if ! command -v goreleaser >/dev/null 2>&1; then \
+		echo "Installing GoReleaser..."; \
+		brew install goreleaser; \
+	else \
+		echo "✅ GoReleaser already installed"; \
+	fi
+	@if ! command -v act >/dev/null 2>&1; then \
+		echo "Installing act (GitHub Actions local runner)..."; \
+		brew install act; \
+	else \
+		echo "✅ act already installed"; \
+	fi
+	@echo "✅ Release tooling installation complete"
+
 # Show help
 help:
 	@echo ""
 	@echo "🏗️  HiiRetail Unified Terraform Provider Build System"
 	@echo ""
 	@echo "Available targets:"
-	@echo "  build           Build the provider binary"
-	@echo "  install         Build and install to local plugin directory"
-	@echo "  test            Run all tests"
-	@echo "  test-unit       Run unit tests only"
-	@echo "  test-acceptance Run acceptance tests only"
-	@echo "  fmt             Format Go code"
-	@echo "  lint            Lint Go code with security checks"
-	@echo "  security-audit  Run security audit for OAuth2 credential handling"
-	@echo "  install-lint    Install golangci-lint for enhanced linting"
-	@echo "  setup-security-hooks Setup git hooks for credential exposure detection"
-	@echo "  clean           Clean up build artifacts"
-	@echo "  dev-override    Show development override configuration"
-	@echo "  deps            Download and tidy dependencies"
-	@echo "  build-all       Build for multiple platforms"
-	@echo "  dev-setup       Complete development setup"
-	@echo "  help            Show this help message"
+	@echo "  build                     Build the provider binary"
+	@echo "  install                   Build and install to local plugin directory"
+	@echo "  test                      Run all tests"
+	@echo "  test-unit                 Run unit tests only"
+	@echo "  test-acceptance           Run acceptance tests only"
+	@echo "  fmt                       Format Go code"
+	@echo "  lint                      Lint Go code with security checks"
+	@echo "  security-audit            Run security audit for OAuth2 credential handling"
+	@echo "  install-lint              Install golangci-lint for enhanced linting"
+	@echo "  setup-security-hooks      Setup git hooks for credential exposure detection"
+	@echo "  clean                     Clean up build artifacts"
+	@echo "  dev-override              Show development override configuration"
+	@echo "  deps                      Download and tidy dependencies"
+	@echo "  build-all                 Build for multiple platforms"
+	@echo "  dev-setup                 Complete development setup"
+	@echo ""
+	@echo "Release targets:"
+	@echo "  validate-release-config   Validate GoReleaser and GitHub Actions configuration"
+	@echo "  test-build-local          Test local build with GoReleaser"
+	@echo "  test-release-process      Test complete release process"
+	@echo "  validate-all-release      Run all release validation tests"
+	@echo "  install-release-tools     Install GoReleaser and act"
+	@echo ""
+	@echo "  help                      Show this help message"
 	@echo ""
 
 .DEFAULT_GOAL := build
