@@ -1,7 +1,8 @@
 terraform {
   required_providers {
     hiiretail = {
-      source = "registry.terraform.io/extenda/hiiretail"
+      source  = "extenda/hiiretail"
+      version = "~> 1.0"
     }
   }
 }

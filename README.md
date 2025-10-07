@@ -1,15 +1,47 @@
 # HiiRetail Terraform Provider
 
-The HiiRetail Terraform provider
+The HiiRetail Terraform Provider enables management of HiiRetail platform resources through Infrastructure as Code. This unified provider supports multiple HiiRetail APIs, starting with Identity and Access Management (IAM) operations including user groups, custom roles, resources, and role bindings. Future versions will extend support to additional APIs like OCMS (OAuth Client Management Service).
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `tenant_id` | string | **No*** | Tenant ID to use for all IAM API requests |
-| `client_id` | string | **No*** | OIDC client ID for IAM API authentication |
-| `client_secret` | string | **No*** | OIDC client secret for IAM API authentication (sensitive) |
-| `base_url` | string | No | Base URL of the IAM API (defaults to https://iam-api.retailsvc-test.com) |
+## 📦 Installation
 
-**\*** Required credentials can be provided via environment variables (HIIRETAIL_*, TF_VAR_*) instead of provider configuration.s management of HiiRetail platform resources through Infrastructure as Code. This unified provider supports multiple HiiRetail APIs, starting with Identity and Access Management (IAM) operations including user groups, custom roles, resources, and role bindings. Future versions will extend support to additional APIs like OCMS (OAuth Client Management Service).
+### Terraform Registry (Recommended)
+
+This provider is published to the [Terraform Registry](https://registry.terraform.io/providers/extenda/hiiretail). Terraform will automatically download it when you run `terraform init`.
+
+```hcl
+terraform {
+  required_providers {
+    hiiretail = {
+      source  = "extenda/hiiretail"
+      version = "~> 1.0"
+    }
+  }
+}
+
+provider "hiiretail" {
+  # Configuration options
+}
+```
+
+### Manual Installation
+
+For development or testing purposes, you can install the provider manually:
+
+1. Download the appropriate binary for your platform from the [GitHub releases](https://github.com/extenda/terraform-provider-hiiretail/releases)
+2. Extract the binary to your Terraform plugins directory:
+   - **Linux/macOS**: `~/.terraform.d/plugins/extenda/hiiretail/x.y.z/OS_ARCH/`
+   - **Windows**: `%APPDATA%\terraform.d\plugins\extenda\hiiretail\x.y.z\OS_ARCH\`
+3. Run `terraform init` in your configuration directory
+
+### Local Development
+
+For local development and testing:
+
+```bash
+git clone https://github.com/extenda/terraform-provider-hiiretail
+cd terraform-provider-hiiretail
+make dev-setup
+```
 
 ## 📚 Documentation
 
@@ -48,7 +80,8 @@ The HiiRetail Terraform provider
 terraform {
   required_providers {
     hiiretail = {
-      source = "extenda/hiiretail"
+      source  = "extenda/hiiretail"
+      version = "~> 1.0"
     }
   }
 }

@@ -15,7 +15,8 @@ The HiiRetail provider enables management of HiiRetail resources through Terrafo
 terraform {
   required_providers {
     hiiretail = {
-      source = "registry.terraform.io/extenda/hiiretail"
+      source  = "extenda/hiiretail"
+      version = "~> 1.0"
     }
   }
 }
@@ -74,6 +75,37 @@ variable "tenant_id" {
 - `tenant_id` (String) Tenant ID for resources. Can also be set via `HIIRETAIL_TENANT_ID` environment variable.
 - `timeout_seconds` (Number) Request timeout in seconds. Defaults to 30.
 - `token_url` (String) OAuth2 token URL. Can also be set via `HIIRETAIL_TOKEN_URL` environment variable.
+
+## Installation
+
+### Terraform Registry
+
+This provider is available in the [Terraform Registry](https://registry.terraform.io/providers/extenda/hiiretail). Terraform will automatically download the provider when you run `terraform init`.
+
+Simply add the provider requirement to your Terraform configuration:
+
+```hcl
+terraform {
+  required_providers {
+    hiiretail = {
+      source  = "extenda/hiiretail"
+      version = "~> 1.0"
+    }
+  }
+}
+```
+
+### Version Constraints
+
+It's recommended to specify version constraints to ensure compatibility:
+
+- `"~> 1.0"` - Allow patch releases within the 1.x series
+- `">= 1.0.0, < 2.0.0"` - Explicit version range
+- `"1.2.3"` - Pin to exact version
+
+### Manual Installation
+
+For development or air-gapped environments, download binaries from [GitHub Releases](https://github.com/extenda/terraform-provider-hiiretail/releases) and place them in your Terraform plugins directory.
 
 ## Authentication
 
