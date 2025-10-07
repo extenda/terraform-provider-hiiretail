@@ -17,6 +17,8 @@ Auto-generated from all feature plans. Last updated: 2025-09-28
 - N/A (provider manages external API resources, not local storage) (008-the-iam-is)
 - Go 1.19+ (Terraform Plugin Framework) + HashiCorp Terraform Plugin Framework, OAuth2 client libraries, HiiRetail IAM API clients (009-improve-resource-usability)
 - N/A (provider manages remote API resources) (009-improve-resource-usability)
+- Go 1.21+ (existing Terraform provider) + HashiCorp Terraform Plugin Framework, GoReleaser, GitHub Actions (010-make-our-provider)
+- N/A (distribution artifacts only) (010-make-our-provider)
 
 ## Project Structure
 ```
@@ -55,9 +57,9 @@ Go 1.21+: Follow standard conventions
 - Provide clear error messages distinguishing between credential, network, and server errors
 
 ## Recent Changes
+- 010-make-our-provider: Added Go 1.21+ (existing Terraform provider) + HashiCorp Terraform Plugin Framework, GoReleaser, GitHub Actions
 - 009-improve-resource-usability: Added Go 1.19+ (Terraform Plugin Framework) + HashiCorp Terraform Plugin Framework, OAuth2 client libraries, HiiRetail IAM API clients
 - 008-the-iam-is: Added Go 1.19+ (Terraform Plugin Framework requirement) + HashiCorp Terraform Plugin Framework, golang.org/x/oauth2, existing HiiRetail APIs
-- 007-oauth2-authentication-with: Added Go 1.21+ (matches existing Terraform provider) + Terraform Plugin Framework v1.16.0, golang.org/x/oauth2 v0.30.0
 
 ### OAuth2 Authentication Enhancement (006-correctly-handle-client)
 **Key Components**:
