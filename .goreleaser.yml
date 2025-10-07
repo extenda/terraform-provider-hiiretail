@@ -40,6 +40,7 @@ signs:
     env:
       - GPG_TTY={{ .Env.GPG_TTY }}
     args: ["--batch", "--local-user", "{{ .Env.GPG_FINGERPRINT }}", "--output", "${signature}", "--detach-sign", "${artifact}"]
+    artifacts: checksum
 
 release:
   github:

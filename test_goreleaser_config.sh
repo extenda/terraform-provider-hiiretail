@@ -51,7 +51,7 @@ fi
 echo "✅ Project name is correctly set"
 
 # Validate build configuration
-if ! grep -q "binary: terraform-provider-{{ .ProjectName }}_v{{ .Version }}" .goreleaser.yml; then
+if ! grep -q 'binary: "{{ .ProjectName }}_v{{ .Version }}"' .goreleaser.yml; then
     echo "❌ FAIL: Binary naming template incorrect"
     exit 1
 fi
