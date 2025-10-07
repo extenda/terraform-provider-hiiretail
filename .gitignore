@@ -1,7 +1,27 @@
-# Binaries and executables
+# Go binaries and executables
 terraform-provider-*
 hiiretail
-iam
+*.test
+*.prof
+coverage.out
+
+# Node.js dependencies (should never be in Go projects)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+
+# Temporary and build directories
+temp/
+tmp/
+build/
+dist/
+bin/
+target/
+
+# Demo binaries
 demo/demo
 demo/oauth2-demo
 
@@ -73,11 +93,6 @@ provider_code_spec.json
 ehthumbs.db
 Thumbs.db
 
-# Go related
-*.test
-*.prof
-coverage.out
-
 # Authentication and config files that might contain sensitive data
 .terraformrc
 
@@ -86,3 +101,37 @@ test_auth_dir/
 
 # Documentation that gets regenerated
 corrected-terraformrc-example.txt
+
+# Compiled Object files, Static and Dynamic libs (Shared Objects)
+*.o
+*.a
+*.so
+
+# Folders
+_obj/
+_test/
+
+# Architecture specific extensions/prefixes
+*.[568vq]
+[568vq].out
+
+# cgo generated files
+*.cgo1.go
+*.cgo2.c
+_cgo_defun.c
+_cgo_gotypes.go
+_cgo_export.*
+
+# Output of the go coverage tool
+*.out
+
+# Dependency directories (Go modules)
+vendor/
+
+# Air live reload configuration
+.air.toml
+
+# Local environment files
+.env
+.env.local
+.env.*.local
