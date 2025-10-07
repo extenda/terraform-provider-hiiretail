@@ -45,11 +45,10 @@ fi
 pass_test "Repository is in clean state"
 
 # Check if we're on a feature branch (not main/master)
-current_branch=$(git branch --show-current)
-if [[ "$current_branch" == "main" || "$current_branch" == "master" ]]; then
-    warn_test "Currently on $current_branch branch - release testing should be done on feature branch"
+current_branch=$(git rev-parse --abbrev-ref HEAD)
+if [[ "$current_branch" != "010-make-our-provider" ]]; then
+    echo "⚠️  WARNING: Not on feature branch (current: $current_branch)"
 fi
-pass_test "Current branch: $current_branch"
 
 # Phase 2: Configuration Validation
 echo -e "\n=== Phase 2: Configuration Validation ==="
