@@ -1,6 +1,13 @@
 # HiiRetail Terraform Provider
 
-The HiiRetail Terraform provider enables management of HiiRetail platform resources through Infrastructure as Code. This unified provider supports multiple HiiRetail APIs, starting with Identity and Access Management (IAM) operations including user groups, custom roles, resources, and role bindings. Future versions will extend support to additional APIs like OCMS (OAuth Client Management Service).
+The HiiRetail Terraform provider | Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `tenant_id` | string | **No*** | Tenant ID to use for all IAM API requests |
+| `client_id` | string | **No*** | OIDC client ID for IAM API authentication |
+| `client_secret` | string | **No*** | OIDC client secret for IAM API authentication (sensitive) |
+| `base_url` | string | No | Base URL of the IAM API (defaults to https://iam-api.retailsvc-test.com) |
+
+**\*** Required credentials can be provided via environment variables (HIIRETAIL_*, TF_VAR_*) instead of provider configuration.s management of HiiRetail platform resources through Infrastructure as Code. This unified provider supports multiple HiiRetail APIs, starting with Identity and Access Management (IAM) operations including user groups, custom roles, resources, and role bindings. Future versions will extend support to additional APIs like OCMS (OAuth Client Management Service).
 
 ## 📚 Documentation
 
@@ -39,15 +46,26 @@ The HiiRetail Terraform provider enables management of HiiRetail platform resour
 terraform {
   required_providers {
     hiiretail = {
-      source = "registry.terraform.io/extenda/hiiretail"
+      source = "extenda/hiiretail"
     }
   }
 }
 
+# Recommended: Use environment variables for authentication
 provider "hiiretail" {
-  # Authentication will use precedence: terraform.tfvars → TF_VAR_* → HIIRETAIL_* → error
-  # No explicit configuration needed when using environment variables
+  # All authentication handled via environment variables:
+  # - HIIRETAIL_CLIENT_ID
+  # - HIIRETAIL_CLIENT_SECRET  
+  # - HIIRETAIL_TENANT_ID
 }
+
+# Alternative: Explicit configuration (less secure)
+# provider "hiiretail" {
+#   tenant_id     = var.tenant_id
+#   client_id     = var.client_id
+#   client_secret = var.client_secret
+#   base_url      = "https://custom-api.example.com" # Optional, defaults to https://iam-api.retailsvc.com
+# }
 ```
 
 ### Configuration Parameters

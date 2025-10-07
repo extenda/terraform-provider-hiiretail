@@ -30,15 +30,26 @@ Format: `Authorization: Basic base64(client_id:client_secret)`
 **⚠️ SECURITY WARNING**: Never use real credentials in documentation. Always use placeholder values and obtain actual credentials through secure channels.
 
 ```hcl
+# Recommended: Empty provider block with environment variables
 provider "hiiretail" {
-  client_id     = "your-oauth2-client-id"
-  client_secret = "your-oauth2-client-secret"
-  tenant_id     = "your-tenant-id"
+  # Authentication via environment variables:
+  # - HIIRETAIL_CLIENT_ID
+  # - HIIRETAIL_CLIENT_SECRET
+  # - HIIRETAIL_TENANT_ID
   
-  # Optional configuration
+  # Optional configuration can still be specified
   timeout_seconds = 30
   max_retries = 3
 }
+
+# Alternative: Explicit configuration (not recommended for security)
+# provider "hiiretail" {
+#   client_id     = var.client_id
+#   client_secret = var.client_secret
+#   tenant_id     = var.tenant_id
+#   timeout_seconds = 30
+#   max_retries = 3
+# }
 ```
 
 ### Obtaining Credentials
@@ -106,9 +117,17 @@ export HIIRETAIL_TENANT_ID="hiiretail-tenant"
 # Result: "hiiretail-tenant" is used
 ```
 
-## Terraform Variables File
+## Authentication Recommendations
 
-Create a `terraform.tfvars` file for reusable credentials:
+**🌟 RECOMMENDED**: Use environment variables for better security:
+
+```bash
+export HIIRETAIL_CLIENT_ID="your-oauth2-client-id"
+export HIIRETAIL_CLIENT_SECRET="your-oauth2-client-secret"
+export HIIRETAIL_TENANT_ID="your-tenant-id"
+```
+
+**Alternative**: Create a `terraform.tfvars` file (less secure):
 
 ```hcl
 client_id     = "your-oauth2-client-id"
@@ -116,16 +135,22 @@ client_secret = "your-oauth2-client-secret"
 tenant_id     = "your-tenant-id"
 ```
 
-**⚠️ IMPORTANT**: Add `terraform.tfvars` to your `.gitignore` file to prevent accidentally committing real credentials.
+**⚠️ IMPORTANT**: If using `terraform.tfvars`, add it to your `.gitignore` file to prevent accidentally committing real credentials.
 
 Then reference in your configuration:
 
 ```hcl
+# Recommended: Use environment variables instead
 provider "hiiretail" {
-  client_id     = var.client_id
-  client_secret = var.client_secret
-  tenant_id     = var.tenant_id
+  # Empty provider block - all authentication via environment variables
 }
+
+# If you must use terraform.tfvars, reference variables like this:
+# provider "hiiretail" {
+#   client_id     = var.client_id
+#   client_secret = var.client_secret
+#   tenant_id     = var.tenant_id
+# }
 ```
 
 ## OAuth2 Flow Details
