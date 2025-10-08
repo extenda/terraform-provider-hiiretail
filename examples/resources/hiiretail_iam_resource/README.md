@@ -16,14 +16,11 @@ terraform {
 }
 
 provider "hiiretail" {
-  tenant_id     = "your-tenant-id"
-  client_id     = "your-oauth2-client-id"
-  client_secret = "your-oauth2-client-secret"
-  token_url     = "https://auth.hiiretail.com/oauth/token"
+  #Optional configuration
 }
 
 resource "hiiretail_iam_resource" "my_first_resource" {
-  id   = "store:001"
+  id   = "bu:001"
   name = "My First Store"
 }
 ```

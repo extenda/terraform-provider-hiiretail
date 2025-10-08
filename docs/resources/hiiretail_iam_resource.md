@@ -8,72 +8,15 @@ Provides a HiiRetail IAM resource for managing granular access control within yo
 
 ## Example Usage
 
-### Basic Resource
+### Store (Business Unit) Resource
 
 ```hcl
 resource "hiiretail_iam_resource" "store_001" {
-  id   = "store:001"
+  id   = "bu:001"
   name = "Main Store - Downtown"
 }
 ```
 
-### Resource with Properties
-
-```hcl
-resource "hiiretail_iam_resource" "pos_terminal" {
-  id   = "pos:store-001:terminal-01"
-  name = "POS Terminal 01 - Main Store"
-  props = jsonencode({
-    location    = "checkout-1"
-    department  = "electronics"
-    active      = true
-    metadata = {
-      install_date = "2024-01-15"
-      model       = "VeriFone MX925"
-    }
-  })
-}
-```
-
-### Department Resource
-
-```hcl
-resource "hiiretail_iam_resource" "electronics_dept" {
-  id   = "dept:electronics"
-  name = "Electronics Department"
-  props = jsonencode({
-    manager     = "john.doe@company.com"
-    budget      = 50000
-    categories  = ["mobile", "computers", "accessories"]
-    permissions = {
-      inventory_read  = true
-      inventory_write = true
-      reports_access  = true
-    }
-  })
-}
-```
-
-### Application Resource
-
-```hcl
-resource "hiiretail_iam_resource" "inventory_app" {
-  id   = "app:inventory-management"
-  name = "Inventory Management System"
-  props = jsonencode({
-    version     = "2.1.4"
-    environment = "production"
-    endpoints = [
-      "https://api.company.com/inventory",
-      "https://api.company.com/reports"
-    ]
-    features = {
-      real_time_sync = true
-      batch_import   = true
-      audit_trail    = true
-    }
-  })
-}
 ```
 
 ## Argument Reference
@@ -111,17 +54,12 @@ The resource ID must follow the same validation rules as when creating a resourc
 
 Valid resource ID patterns:
 
-* **Store Resources**: `store:001`, `store:main-branch`, `store:location-nyc`
-* **Department Resources**: `dept:electronics`, `dept:clothing`, `dept:home-garden`
-* **POS Resources**: `pos:store-001:terminal-01`, `pos:mobile:tablet-05`
-* **Application Resources**: `app:inventory-management`, `app:customer-portal`
-* **User Profile Resources**: `user.profile.settings`, `user.preferences.theme`
-* **Generic Resources**: `resource-name`, `my-custom-resource`, `data:customer:12345`
+* **Store Resources**: `bu:001`, `bu:9HJ`, `bu:stockholm-321`
 
 Invalid patterns (will cause validation errors):
 
-* `store/001` - Contains forward slash
-* `store__001` - Contains consecutive underscores
+* `bu/001` - Contains forward slash
+* `bu__001` - Contains consecutive underscores
 * `.` or `..` - Reserved patterns
 * Empty string - Must have at least 1 character
 * Strings over 1500 characters - Exceeds maximum length
@@ -133,43 +71,16 @@ The `props` field accepts any valid JSON structure. Here are common patterns:
 ### Simple Key-Value Properties
 ```hcl
 props = jsonencode({
-  location = "main-floor"
+  location = "stockholm"
   active   = true
-  priority = 1
-})
-```
-
-### Nested Objects
-```hcl
-props = jsonencode({
-  metadata = {
-    created_by = "admin@company.com"
-    created_at = "2024-01-15T10:30:00Z"
-    version    = "1.0"
-  }
-  settings = {
-    auto_sync    = true
-    notifications = false
-  }
-})
-```
-
-### Arrays and Lists
-```hcl
-props = jsonencode({
-  tags        = ["retail", "pos", "production"]
-  permissions = ["read", "write", "admin"]
-  endpoints   = [
-    "https://api.company.com/endpoint1",
-    "https://api.company.com/endpoint2"
-  ]
+  flag_ship = true
 })
 ```
 
 ### Mixed Data Types
 ```hcl
 props = jsonencode({
-  name          = "Store Manager Dashboard"
+  name          = "NYC Flagship Store"
   employee_count = 25
   is_flagship   = true
   departments   = ["electronics", "clothing", "home"]
@@ -201,8 +112,7 @@ The create operation failed for resource 'store:001'. Please check that:
 ```
 Error: Permission Denied
 You don't have permission to create resource 'store:001'. Please check that:
-• Your OAuth2 token includes the required scopes (iam:read, iam:write)
-• Your account has the necessary IAM permissions
+• Your OCMS Client has the necessary IAM permissions via a Role
 • You're accessing the correct tenant
 ```
 
@@ -240,7 +150,7 @@ Resources are typically used in conjunction with custom IAM roles to create fine
 ```hcl
 # Define the resource
 resource "hiiretail_iam_resource" "store_001" {
-  id   = "store:001"
+  id   = "bu:001"
   name = "Main Store - Downtown"
   props = jsonencode({
     location = "downtown"
@@ -250,13 +160,13 @@ resource "hiiretail_iam_resource" "store_001" {
 
 # Create a custom role that references the resource
 resource "hiiretail_iam_custom_role" "store_manager" {
-  name        = "Store Manager - Store 001"
+  name        = "Store Manager - ${hiiretail_iam_resource.store_001.id}"
   description = "Manager permissions for specific store"
   permissions = [
-    "inventory.${hiiretail_iam_resource.store_001.id}.read",
-    "inventory.${hiiretail_iam_resource.store_001.id}.write",
-    "sales.${hiiretail_iam_resource.store_001.id}.read",
-    "reports.${hiiretail_iam_resource.store_001.id}.generate"
+    "inventory.items.read",
+    "inventory.items.write",
+    "sales.receipts.read",
+    "reports.xyz.generate"
   ]
 }
 

@@ -7,9 +7,7 @@ terraform {
 }
 
 provider "hiiretail" {
-  client_id     = var.client_id
-  client_secret = var.client_secret
-  tenant_id     = var.tenant_id
+  # Optional configuration
 }
 
 # Basic group
@@ -26,28 +24,9 @@ resource "hiiretail_iam_group" "admin_group" {
 }
 
 # Group with minimal configuration
-resource "hiiretail_iam_group" "developers" {
-  name = "Developers"
+resource "hiiretail_iam_group" "cashiers" {
+  name = "Cashiers"
   # description will be computed if not provided
-}
-
-# Variables
-variable "client_id" {
-  description = "HiiRetail OAuth2 client ID"
-  type        = string
-  sensitive   = true
-}
-
-variable "client_secret" {
-  description = "HiiRetail OAuth2 client secret"
-  type        = string
-  sensitive   = true
-}
-
-variable "tenant_id" {
-  description = "Tenant ID for scoping HiiRetail resources"
-  type        = string
-  default     = "your-tenant-id"
 }
 
 # Outputs
@@ -61,7 +40,7 @@ output "admin_group_id" {
   value       = hiiretail_iam_group.admin_group.id
 }
 
-output "developers_group_id" {
-  description = "ID of the developers group"
-  value       = hiiretail_iam_group.developers.id
+output "cashiers_group_id" {
+  description = "ID of the cashiers group"
+  value       = hiiretail_iam_group.cashiers.id
 }

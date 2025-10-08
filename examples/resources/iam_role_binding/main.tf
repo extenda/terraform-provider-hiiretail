@@ -54,25 +54,6 @@ resource "hiiretail_iam_role_binding" "manager_access" {
   bindings  = ["*"]
 }
 
-# Variables
-variable "client_id" {
-  description = "HiiRetail OAuth2 client ID"
-  type        = string
-  sensitive   = true
-}
-
-variable "client_secret" {
-  description = "HiiRetail OAuth2 client secret"
-  type        = string
-  sensitive   = true
-}
-
-variable "tenant_id" {
-  description = "Tenant ID for scoping HiiRetail resources"
-  type        = string
-  default     = "your-tenant-id"
-}
-
 # Outputs
 output "custom_role_binding_id" {
   description = "ID of the custom role binding"

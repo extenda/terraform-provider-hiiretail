@@ -15,9 +15,3 @@ variable "client_secret" {
   type        = string
   sensitive   = true
 }
-
-variable "token_url" {
-  description = "OAuth2 token endpoint URL"
-  type        = string
-  default     = "https://auth.hiiretail.com/oauth/token"
-}

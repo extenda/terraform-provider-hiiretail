@@ -3,4 +3,3 @@
 tenant_id     = "your-tenant-id"
 client_id     = "your-oauth2-client-id"
 client_secret = "your-oauth2-client-secret"
-token_url     = "https://auth.hiiretail.com/oauth/token"
