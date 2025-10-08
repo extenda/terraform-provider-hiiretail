@@ -1,7 +1,7 @@
 {
   "name": "terraform-provider-hiiretail",
   "description": "Terraform provider for HiiRetail IAM API integration.",
-  "version": "0.1.9-beta",
+  "version": "1",
   "homepage": "https://github.com/extenda/terraform-provider-hiiretail",
   "repository": "https://github.com/extenda/terraform-provider-hiiretail",
   "license": "MPL-2.0",
