@@ -1,19 +1,8 @@
 {
-  "name": "terraform-provider-hiiretail",
-  "description": "Terraform provider for HiiRetail IAM API integration.",
   "version": 1,
-  "homepage": "https://github.com/extenda/terraform-provider-hiiretail",
-  "repository": "https://github.com/extenda/terraform-provider-hiiretail",
-  "license": "MPL-2.0",
-  "platforms": [
-    "linux_amd64",
-    "linux_arm64",
-    "darwin_amd64",
-    "darwin_arm64",
-    "windows_amd64",
-    "windows_arm64"
-  ],
-  "authors": [
-    "Extenda Retail"
-  ]
+  "metadata": {
+    "protocol_versions": [
+      "5.0"
+    ]
+  }
 }
