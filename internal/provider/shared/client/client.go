@@ -136,13 +136,13 @@ func (c *Client) Do(ctx context.Context, req *Request) (*Response, error) {
 		httpReq.Header.Set("Content-Type", "application/json")
 	}
 
-       for key, value := range req.Headers {
-	       httpReq.Header.Set(key, value)
-       }
-       // If TestToken is set, use it for Authorization and skip real OAuth2
-       if c.auth != nil && c.auth.TestToken != "" {
-	       httpReq.Header.Set("Authorization", "Bearer "+c.auth.TestToken)
-       }
+	for key, value := range req.Headers {
+		httpReq.Header.Set(key, value)
+	}
+	// If TestToken is set, use it for Authorization and skip real OAuth2
+	if c.auth != nil && c.auth.TestToken != "" {
+		httpReq.Header.Set("Authorization", "Bearer "+c.auth.TestToken)
+	}
 
 	// Execute request with retries
 	resp, err := c.doWithRetry(ctx, httpReq)

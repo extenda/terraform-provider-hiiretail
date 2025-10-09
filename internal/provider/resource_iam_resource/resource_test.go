@@ -15,7 +15,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-
 // TestSetResourceContract verifies the PUT /api/v1/tenants/{tenantId}/resources/{id} endpoint contract
 func TestSetResourceContract(t *testing.T) {
 	tests := []struct {
@@ -156,24 +155,24 @@ func TestSetResourceContract(t *testing.T) {
 			mockConfig := client.DefaultConfig()
 			mockConfig.BaseURL = server.URL
 			// Use real client.Client with minimal valid auth.Config for contract test
-			   dummyAuth := &auth.Config{
-				   ClientID:     "dummy-client-id",
-				   ClientSecret: "dummy-client-secret",
-				   TenantID:     "test-tenant",
-				   APIURL:       server.URL,
-				   AuthURL:      server.URL + "/oauth2/token",
-				   Environment:  "test",
-				   Scopes:       []string{"hiiretail:iam"},
-				   Timeout:      5,
-				   MaxRetries:   0,
-				   SkipTLS:      true,
-				   TestToken:    "dummy-token-for-contract-test",
-			   }
+			dummyAuth := &auth.Config{
+				ClientID:     "dummy-client-id",
+				ClientSecret: "dummy-client-secret",
+				TenantID:     "test-tenant",
+				APIURL:       server.URL,
+				AuthURL:      server.URL + "/oauth2/token",
+				Environment:  "test",
+				Scopes:       []string{"hiiretail:iam"},
+				Timeout:      5,
+				MaxRetries:   0,
+				SkipTLS:      true,
+				TestToken:    "dummy-token-for-contract-test",
+			}
 			mockConfig = client.DefaultConfig()
 			mockConfig.BaseURL = server.URL
 			mockClient, errNew := client.New(dummyAuth, mockConfig)
 			require.NoError(t, errNew, "Failed to create mock client")
-			   service := iam.NewService(mockClient, "test-tenant")
+			service := iam.NewService(mockClient, "test-tenant")
 
 			// This test should FAIL because SetResource is not yet implemented
 			ctx := context.Background()

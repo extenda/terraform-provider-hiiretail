@@ -14,6 +14,10 @@ import (
 	"github.com/extenda/hiiretail-terraform-providers/internal/provider/shared/client"
 )
 
+// Minimal type usage test
+
+// contains checks if substr is present anywhere in s
+
 // TestOIDCIntegration tests the OIDC client credentials flow integration
 func TestOIDCIntegration(t *testing.T) {
 	// Set up environment variables for tests
@@ -109,6 +113,7 @@ func TestOIDCIntegration(t *testing.T) {
 					"scopes":          tftypes.Set{ElementType: tftypes.String},
 					"timeout_seconds": tftypes.Number,
 					"max_retries":     tftypes.Number,
+					"tenant_id":       tftypes.String,
 				},
 			}, map[string]tftypes.Value{
 				"client_id":       tftypes.NewValue(tftypes.String, tc.clientId),
@@ -120,6 +125,7 @@ func TestOIDCIntegration(t *testing.T) {
 				"scopes":          tftypes.NewValue(tftypes.Set{ElementType: tftypes.String}, nil),
 				"timeout_seconds": tftypes.NewValue(tftypes.Number, nil),
 				"max_retries":     tftypes.NewValue(tftypes.Number, nil),
+				"tenant_id":       tftypes.NewValue(tftypes.String, "test-tenant"),
 			})
 
 			config := tfsdk.Config{
@@ -207,6 +213,7 @@ func TestProviderConfigurationValidation(t *testing.T) {
 				"scopes":          tftypes.NewValue(tftypes.Set{ElementType: tftypes.String}, nil),
 				"timeout_seconds": tftypes.NewValue(tftypes.Number, nil),
 				"max_retries":     tftypes.NewValue(tftypes.Number, nil),
+				"tenant_id":       tftypes.NewValue(tftypes.String, "test-tenant"),
 			},
 			expectedError: "invalid client_id",
 		},
@@ -222,6 +229,7 @@ func TestProviderConfigurationValidation(t *testing.T) {
 				"scopes":          tftypes.NewValue(tftypes.Set{ElementType: tftypes.String}, nil),
 				"timeout_seconds": tftypes.NewValue(tftypes.Number, nil),
 				"max_retries":     tftypes.NewValue(tftypes.Number, nil),
+				"tenant_id":       tftypes.NewValue(tftypes.String, "test-tenant"),
 			},
 			expectedError: "invalid client_secret",
 		},
@@ -237,6 +245,7 @@ func TestProviderConfigurationValidation(t *testing.T) {
 				"scopes":          tftypes.NewValue(tftypes.Set{ElementType: tftypes.String}, nil),
 				"timeout_seconds": tftypes.NewValue(tftypes.Number, nil),
 				"max_retries":     tftypes.NewValue(tftypes.Number, nil),
+				"tenant_id":       tftypes.NewValue(tftypes.String, "test-tenant"),
 			},
 			expectedError: "OAuth2 authentication failed",
 		},
@@ -262,6 +271,7 @@ func TestProviderConfigurationValidation(t *testing.T) {
 					"scopes":          tftypes.Set{ElementType: tftypes.String},
 					"timeout_seconds": tftypes.Number,
 					"max_retries":     tftypes.Number,
+					"tenant_id":       tftypes.String,
 				},
 			}, tc.config)
 
