@@ -72,7 +72,7 @@
 //   - Automatic credential redaction in logs and error messages
 //   - Secure token caching with integrity validation
 //   - HTTPS enforcement for all OAuth2 and API endpoints
-//   - Automatic token refresh and retry logic
+//   - Automatic token refresh and retry logic (rate limiting logic removed)
 package auth
 
 import (
