@@ -106,6 +106,7 @@ type Config struct {
 	MaxRetries       int  `json:"max_retries,omitempty"`
 	DisableDiscovery bool `json:"disable_discovery,omitempty"`
 	SkipTLS          bool `json:"skip_tls,omitempty"` // For testing only
+ 	TestToken        string `json:"test_token,omitempty"` // For contract tests only
 }
 
 // Client provides OAuth2 authentication for HiiRetail IAM APIs
