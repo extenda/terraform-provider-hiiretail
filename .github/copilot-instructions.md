@@ -57,9 +57,9 @@ Go 1.21+: Follow standard conventions
 - Provide clear error messages distinguishing between credential, network, and server errors
 
 ## Recent Changes
+- 012-fix-remaining-tests: Added [if applicable, e.g., PostgreSQL, CoreData, files or N/A]
 - 010-make-our-provider: Added Go 1.21+ (existing Terraform provider) + HashiCorp Terraform Plugin Framework, GoReleaser, GitHub Actions
 - 009-improve-resource-usability: Added Go 1.19+ (Terraform Plugin Framework) + HashiCorp Terraform Plugin Framework, OAuth2 client libraries, HiiRetail IAM API clients
-- 008-the-iam-is: Added Go 1.19+ (Terraform Plugin Framework requirement) + HashiCorp Terraform Plugin Framework, golang.org/x/oauth2, existing HiiRetail APIs
 
 ### OAuth2 Authentication Enhancement (006-correctly-handle-client)
 **Key Components**:

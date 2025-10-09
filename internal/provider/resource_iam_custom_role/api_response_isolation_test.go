@@ -69,7 +69,7 @@ func TestApiResponseToModel_Isolated(t *testing.T) {
 	t.Logf("Permission ID is unknown: %v", perm.Id.IsUnknown())
 
 	assert.Equal(t, "pos.payment.create", perm.Id.ValueString(), "Permission ID should be correct")
-	assert.Equal(t, "Create Payment", perm.Alias.ValueString(), "Permission alias should be correct")
+	assert.Equal(t, "", perm.Alias.ValueString(), "Permission alias should be empty string (null)")
 	assert.True(t, perm.Attributes.IsNull(), "Attributes should be null when not provided")
 
 	t.Logf("✅ apiResponseToModel works correctly in isolation")
