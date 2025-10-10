@@ -22,8 +22,16 @@ jobs:
       - name: Install dependencies
         run: go mod tidy
       - name: Run tests
+        env:
+          HIIRETAIL_CLIENT_ID: dummy-client-id
+          HIIRETAIL_CLIENT_SECRET: dummy-client-secret
+          HIIRETAIL_TENANT_ID: dummy-tenant-id
         run: go test -v ./...
       - name: Generate coverage report
+        env:
+          HIIRETAIL_CLIENT_ID: dummy-client-id
+          HIIRETAIL_CLIENT_SECRET: dummy-client-secret
+          HIIRETAIL_TENANT_ID: dummy-tenant-id
         run: go test -coverprofile=coverage.out ./...
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
