@@ -38,6 +38,7 @@ jobs:
       - name: Fetch sonarcloud token
         uses: extenda/actions/gcp-secret-manager@v0
         with:
+          service-account-key: ${{ secrets.SECRET_AUTH }}
           secrets: |
             SONAR_TOKEN: sonarcloud-token
       - name: SonarCloud Scan
