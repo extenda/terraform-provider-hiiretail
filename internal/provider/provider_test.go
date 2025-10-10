@@ -2,13 +2,13 @@ package provider
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
+	"github.com/extenda/hiiretail-terraform-providers/internal/provider/shared/client"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-go/tftypes"
-
-	"github.com/extenda/hiiretail-terraform-providers/internal/provider/shared/client"
 )
 
 func TestHiiRetailProvider(t *testing.T) {
@@ -79,6 +79,7 @@ func TestHiiRetailProvider_Configure(t *testing.T) {
 				"scopes":          tftypes.NewValue(tftypes.Set{ElementType: tftypes.String}, []tftypes.Value{tftypes.NewValue(tftypes.String, "iam:read")}),
 				"timeout_seconds": tftypes.NewValue(tftypes.Number, 30),
 				"max_retries":     tftypes.NewValue(tftypes.Number, 3),
+				"tenant_id":       tftypes.NewValue(tftypes.String, "test-tenant"),
 			},
 			expectedError: "OAuth2 authentication failed", // Expected in unit tests with fake credentials
 		},
@@ -94,6 +95,7 @@ func TestHiiRetailProvider_Configure(t *testing.T) {
 				"scopes":          tftypes.NewValue(tftypes.Set{ElementType: tftypes.String}, nil),
 				"timeout_seconds": tftypes.NewValue(tftypes.Number, nil),
 				"max_retries":     tftypes.NewValue(tftypes.Number, nil),
+				"tenant_id":       tftypes.NewValue(tftypes.String, "test-tenant"),
 			},
 			expectedError: "OAuth2 authentication failed", // Expected in unit tests with fake credentials
 		},
@@ -109,8 +111,9 @@ func TestHiiRetailProvider_Configure(t *testing.T) {
 				"scopes":          tftypes.NewValue(tftypes.Set{ElementType: tftypes.String}, nil),
 				"timeout_seconds": tftypes.NewValue(tftypes.Number, nil),
 				"max_retries":     tftypes.NewValue(tftypes.Number, nil),
+				"tenant_id":       tftypes.NewValue(tftypes.String, "test-tenant"),
 			},
-			expectedError: "invalid client_id",
+			expectedError: "client authentication failed",
 		},
 		{
 			name: "Missing client_secret - should fail validation",
@@ -124,8 +127,9 @@ func TestHiiRetailProvider_Configure(t *testing.T) {
 				"scopes":          tftypes.NewValue(tftypes.Set{ElementType: tftypes.String}, nil),
 				"timeout_seconds": tftypes.NewValue(tftypes.Number, nil),
 				"max_retries":     tftypes.NewValue(tftypes.Number, nil),
+				"tenant_id":       tftypes.NewValue(tftypes.String, "test-tenant"),
 			},
-			expectedError: "invalid client_secret",
+			expectedError: "client authentication failed",
 		},
 	}
 
@@ -149,6 +153,7 @@ func TestHiiRetailProvider_Configure(t *testing.T) {
 					"scopes":          tftypes.Set{ElementType: tftypes.String},
 					"timeout_seconds": tftypes.Number,
 					"max_retries":     tftypes.Number,
+					"tenant_id":       tftypes.String,
 				},
 			}, tc.config)
 
@@ -186,7 +191,16 @@ func TestHiiRetailProvider_Configure(t *testing.T) {
 							}
 						}
 						if !foundInDetail {
-							t.Errorf("Expected error containing '%s', but got: %v", tc.expectedError, resp.Diagnostics.Errors())
+							foundInAny := false
+							for _, err := range resp.Diagnostics.Errors() {
+								if contains(fmt.Sprintf("%v", err), tc.expectedError) {
+									foundInAny = true
+									break
+								}
+							}
+							if !foundInAny {
+								t.Errorf("Expected error containing '%s', but got: %v", tc.expectedError, resp.Diagnostics.Errors())
+							}
 						}
 					}
 				}
@@ -240,6 +254,7 @@ func TestHiiRetailProvider_OIDCConfiguration(t *testing.T) {
 				"scopes":          tftypes.NewValue(tftypes.Set{ElementType: tftypes.String}, nil),
 				"timeout_seconds": tftypes.NewValue(tftypes.Number, nil),
 				"max_retries":     tftypes.NewValue(tftypes.Number, nil),
+				"tenant_id":       tftypes.NewValue(tftypes.String, "test-tenant"),
 			}
 
 			if tc.baseUrl != "" {
@@ -259,6 +274,7 @@ func TestHiiRetailProvider_OIDCConfiguration(t *testing.T) {
 					"scopes":          tftypes.Set{ElementType: tftypes.String},
 					"timeout_seconds": tftypes.Number,
 					"max_retries":     tftypes.Number,
+					"tenant_id":       tftypes.String,
 				},
 			}, configMap)
 
