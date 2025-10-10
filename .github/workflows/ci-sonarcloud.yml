@@ -58,7 +58,8 @@ jobs:
         uses: SonarSource/sonarcloud-github-action@v2
         with:
           projectBaseDir: .
+          args: >
+            -Dsonar.organization=extenda
+            -Dsonar.projectKey=extenda_terraform-provider-hiiretail
         env:
           SONAR_TOKEN: ${{ secrets.QUALITY_GATE_TOKEN }}
-          SONAR_PROJECT_KEY: extenda_terraform-provider-hiiretail
-          SONAR_ORGANIZATION: extenda
