@@ -65,9 +65,17 @@ Gates determined by the constitution:
             - Error case tests simulate invalid configs and API errors
             - Validate resource state after each operation
             - Assert expected errors for negative cases
-            - Parallel execution where possible
-            - CI reporting and release blocking on failure
-            - Document how to run locally and in CI
+               - Parallel execution where possible
+               - CI reporting and release blocking on failure
+               - Document how to run locally and in CI
+               - Acceptance test cases MUST use the TestCase struct:
+                  - Define test steps, configuration, and checks
+                  - Specify preconditions and postconditions for resource state
+                  - Use CheckFunc to assert attributes and error expectations
+                  - Include steps for create, update, import, destroy
+                  - Simulate error scenarios and validate error messages
+                  - Clean up resources after execution
+                  - Document rationale and expected outcomes
          - Test coverage for critical paths (authentication, CRUD, error handling)
          - Error simulation and CI integration
 
