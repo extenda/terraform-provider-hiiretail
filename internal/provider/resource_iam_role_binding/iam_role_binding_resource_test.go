@@ -4,6 +4,9 @@ import (
 	"context"
 	"fmt"
 	"testing"
+
+	"github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 // TestRoleBindingModelValidation tests the validation logic for role binding models
@@ -36,7 +39,7 @@ func TestRoleBindingModelValidation(t *testing.T) {
 			isCustom:      true,
 			bindings:      []string{"user:user-456"},
 			expectedValid: false,
-			expectedError: "role_id cannot be empty",
+			expectedError: "role[0]: role id cannot be empty",
 		},
 		{
 			name:          "empty bindings should be invalid",
@@ -44,15 +47,20 @@ func TestRoleBindingModelValidation(t *testing.T) {
 			isCustom:      true,
 			bindings:      []string{},
 			expectedValid: false,
-			expectedError: "bindings cannot be empty",
+			expectedError: "role[0]: bindings cannot be empty",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Note: This function will be implemented in Phase 3.3 - Core Implementation
-			// For now, this test will fail because ValidateRoleBindingModel doesn't exist yet
-			err := ValidateRoleBindingModel(context.Background(), tt.roleId, tt.isCustom, tt.bindings)
+			roles := []RoleModel{
+				{
+					Id:       types.StringValue(tt.roleId),
+					IsCustom: types.BoolValue(tt.isCustom),
+					Bindings: types.ListValueMust(types.StringType, stringSliceToAttrValues(tt.bindings)),
+				},
+			}
+			err := ValidateRoleBindingModel(context.Background(), roles)
 
 			if tt.expectedValid {
 				if err != nil {
@@ -67,6 +75,15 @@ func TestRoleBindingModelValidation(t *testing.T) {
 			}
 		})
 	}
+}
+
+// Helper function to convert []string to []attr.Value
+func stringSliceToAttrValues(slice []string) []attr.Value {
+	values := make([]attr.Value, len(slice))
+	for i, s := range slice {
+		values[i] = types.StringValue(s)
+	}
+	return values
 }
 
 // TestMaxBindingsValidation tests the maximum bindings limit validation

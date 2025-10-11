@@ -60,14 +60,20 @@ func New(authConfig *auth.Config, clientConfig *Config) (*Client, error) {
 		return nil, fmt.Errorf("invalid base URL: %w", err)
 	}
 
-	// Create OAuth2 HTTP client
-	httpClient, err := auth.NewHTTPClient(context.Background(), authConfig)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create OAuth2 client: %w", err)
+	var httpClient *http.Client
+	if authConfig != nil && authConfig.TestToken != "" {
+		// Use basic http.Client for contract tests with dummy token
+		httpClient = &http.Client{Timeout: clientConfig.Timeout}
+	} else {
+		// Create OAuth2 HTTP client
+		var err error
+		httpClient, err = auth.NewHTTPClient(context.Background(), authConfig)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create OAuth2 client: %w", err)
+		}
+		// Set timeout
+		httpClient.Timeout = clientConfig.Timeout
 	}
-
-	// Set timeout
-	httpClient.Timeout = clientConfig.Timeout
 
 	return &Client{
 		config:     clientConfig,
@@ -132,6 +138,10 @@ func (c *Client) Do(ctx context.Context, req *Request) (*Response, error) {
 
 	for key, value := range req.Headers {
 		httpReq.Header.Set(key, value)
+	}
+	// If TestToken is set, use it for Authorization and skip real OAuth2
+	if c.auth != nil && c.auth.TestToken != "" {
+		httpReq.Header.Set("Authorization", "Bearer "+c.auth.TestToken)
 	}
 
 	// Execute request with retries

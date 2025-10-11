@@ -39,9 +39,30 @@ func TestValidatePropertyStructure(t *testing.T) {
 
 	t.Run("NewPropertiesOnly", func(t *testing.T) {
 		model := &RoleBindingResourceModel{
-			GroupId:  types.StringValue("test-group"),
-			Roles:    types.ListValueMust(types.ObjectType{}, []attr.Value{}),
-			Bindings: types.ListValueMust(types.ObjectType{}, []attr.Value{}),
+			GroupId: types.StringValue("test-group"),
+			Roles: types.ListValueMust(
+				types.ObjectType{
+					AttrTypes: map[string]attr.Type{
+						"id":        types.StringType,
+						"is_custom": types.BoolType,
+						"bindings":  types.ListType{ElemType: types.StringType},
+					},
+				},
+				[]attr.Value{
+					types.ObjectValueMust(
+						map[string]attr.Type{
+							"id":        types.StringType,
+							"is_custom": types.BoolType,
+							"bindings":  types.ListType{ElemType: types.StringType},
+						},
+						map[string]attr.Value{
+							"id":        types.StringValue("role-1"),
+							"is_custom": types.BoolValue(true),
+							"bindings":  types.ListValueMust(types.StringType, []attr.Value{types.StringValue("user:user-456")}),
+						},
+					),
+				},
+			),
 		}
 		result := ValidatePropertyStructure(ctx, model)
 
@@ -77,7 +98,7 @@ func TestConvertLegacyToNew(t *testing.T) {
 			TenantId: types.StringValue("test-tenant"),
 			Name:     types.StringValue("test-group"),
 			Role:     types.StringValue("test-role"),
-			IsCustom: types.BoolValue(true),
+			// IsCustom is not a direct field; set in RoleModel if needed
 		}
 
 		newModel, err := ConvertLegacyToNew(ctx, legacyModel)
