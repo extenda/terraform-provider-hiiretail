@@ -47,7 +47,10 @@
 ## Constitution Check
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+Gates determined by the constitution:
+- Provider MUST use HashiCorp Terraform Plugin Framework for all development ([link](https://developer.hashicorp.com/terraform/plugin/framework)).
+- Provider MUST implement Terraform Plugin Protocol Version 6 ([link](https://developer.hashicorp.com/terraform/plugin/terraform-plugin-protocol#protocol-version-6)).
+- All other constitutional principles must be satisfied (CRUD, authentication, testing, documentation, etc).
 
 ## Project Structure
 

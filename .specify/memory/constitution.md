@@ -19,7 +19,7 @@ Follow-up TODOs: None - all placeholders filled
 ## Core Principles
 
 ### I. Provider Interface Standards
-Every Terraform provider MUST implement complete CRUD operations for all managed resources. Resources must follow HashiCorp's Terraform Plugin Framework conventions with proper schema definitions, validation, and state management. Provider configuration must support secure authentication methods and proper error handling with meaningful error messages.
+Every Terraform provider MUST use the official [Terraform Plugin Framework](https://developer.hashicorp.com/terraform/plugin/framework) for all development. The provider MUST implement complete CRUD operations for all managed resources, following framework conventions for schema definitions, validation, and state management. Provider configuration must support secure authentication methods and proper error handling with meaningful error messages.
 
 ### II. Resource Implementation Completeness
 All resources declared in the provider specification MUST have full implementations including Create, Read, Update, Delete operations where applicable. Each resource must handle API errors gracefully, implement proper retry logic, and maintain accurate Terraform state. Partial implementations or schema-only resources are not acceptable for production use.
@@ -35,7 +35,7 @@ Complete provider documentation including resource schemas, configuration exampl
 
 ## Technical Standards
 
-All code must follow Go best practices and HashiCorp's provider development guidelines. OpenAPI specifications must accurately reflect the target API endpoints and schemas. Generated code must be validated and enhanced with proper business logic. Error handling must be comprehensive with appropriate HTTP status code mapping. Generated code is using [Hashicorp's Terraform OpenAPI Spec Generator](https://developer.hashicorp.com/terraform/plugin/code-generation/openapi-generator) which produces a Provider Code Spec which is used to create the Terraform Provider code. This is documented [here](https://developer.hashicorp.com/terraform/plugin/code-generation/framework-generator).
+All code must follow Go best practices and HashiCorp's provider development guidelines. The provider MUST implement [Terraform Plugin Protocol Version 6](https://developer.hashicorp.com/terraform/plugin/terraform-plugin-protocol#protocol-version-6) and declare protocol version 6 compatibility in all plugin manifests and binaries. OpenAPI specifications must accurately reflect the target API endpoints and schemas. Generated code must be validated and enhanced with proper business logic. Error handling must be comprehensive with appropriate HTTP status code mapping. Generated code is using [Hashicorp's Terraform OpenAPI Spec Generator](https://developer.hashicorp.com/terraform/plugin/code-generation/openapi-generator) which produces a Provider Code Spec which is used to create the Terraform Provider code. This is documented [here](https://developer.hashicorp.com/terraform/plugin/code-generation/framework-generator).
 
 ## Quality Assurance
 
@@ -45,4 +45,4 @@ Code reviews must verify compliance with all constitutional principles. Provider
 
 This constitution supersedes all other development practices for the HiiRetail Terraform Providers project. Amendments require documentation of rationale, approval from project maintainers, and update of dependent templates and documentation. All development decisions must align with these principles - complexity that violates these standards must be justified or refactored.
 
-**Version**: 1.0.0 | **Ratified**: 2025-09-28 | **Last Amended**: 2025-09-28
+**Version**: 1.1.0 | **Ratified**: 2025-09-28 | **Last Amended**: 2025-10-11
