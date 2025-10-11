@@ -54,12 +54,22 @@ Gates determined by the constitution:
    - Resources MUST be importable.
    - Provider MUST maintain state continuity and backwards compatibility.
    - Provider MUST follow Semantic Versioning 2.0.0.
-   - Provider MUST implement comprehensive testing:
-      - Unit tests for all provider functions and resource CRUD operations
-      - Integration tests with real API interactions
-      - Acceptance tests following Terraform conventions (CRUD, import, error cases)
-      - Test coverage for critical paths (authentication, CRUD, error handling)
-      - Error simulation and CI integration
+      - Provider MUST implement comprehensive testing:
+         - Unit tests for all provider functions and resource CRUD operations
+         - Integration tests with real API interactions
+         - Acceptance tests following Terraform conventions:
+            - Cover all resources/data sources (CRUD, import, error cases)
+            - Idempotent, repeatable, and clean up resources
+            - Use environment variables for credentials/config
+            - Import tests verify state matches API
+            - Error case tests simulate invalid configs and API errors
+            - Validate resource state after each operation
+            - Assert expected errors for negative cases
+            - Parallel execution where possible
+            - CI reporting and release blocking on failure
+            - Document how to run locally and in CI
+         - Test coverage for critical paths (authentication, CRUD, error handling)
+         - Error simulation and CI integration
 
 ## Project Structure
 
