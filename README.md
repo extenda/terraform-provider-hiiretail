@@ -1,6 +1,6 @@
 # HiiRetail Terraform Provider
 
-The HiiRetail Terraform Provider enables management of HiiRetail platform resources through Infrastructure as Code. This unified provider supports multiple HiiRetail APIs, starting with Identity and Access Management (IAM) operations including user groups, custom roles, resources, and role bindings. Future versions will extend support to additional APIs like OCMS (OAuth Client Management Service).
+The HiiRetail Terraform Provider enables management of HiiRetail platform resources through Infrastructure as Code. This provider is built using the official [Terraform Plugin Framework](https://developer.hashicorp.com/terraform/plugin/framework) and implements [Terraform Plugin Protocol Version 6](https://developer.hashicorp.com/terraform/plugin/terraform-plugin-protocol#protocol-version-6) for maximum compatibility and maintainability. It supports multiple HiiRetail APIs, starting with Identity and Access Management (IAM) operations including user groups, custom roles, resources, and role bindings. Future versions will extend support to additional APIs like OCMS (OAuth Client Management Service).
 
 ## 📦 Installation
 
