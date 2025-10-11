@@ -29,7 +29,7 @@ end+backend, mobile=app+api)                                            → Set 
 **Language/Version**: [e.g., Python 3.11, Swift 5.9, Rust 1.75 or NEEDS CLARIFICATION]                                                        **Primary Dependencies**: [e.g., FastAPI, UIKit, LLVM or NEEDS CLARIFICATION]                                                                 **Storage**: [if applicable, e.g., PostgreSQL, CoreData, files or N/A]                                                                        **Testing**: [e.g., pytest, XCTest, cargo test or NEEDS CLARIFICATION]                                                                        **Target Platform**: [e.g., Linux server, iOS 15+, WASM or NEEDS CLARIFICATION]                                                               **Project Type**: [single/web/mobile - determines source structure]  
 **Performance Goals**: [domain-specific, e.g., 1000 req/s, 10k lines/sec, 60 fps or NEEDS CLARIFICATION]                                      **Constraints**: [domain-specific, e.g., <200ms p95, <100MB memory, offline-capable or NEEDS CLARIFICATION]                                   **Scale/Scope**: [domain-specific, e.g., 10k users, 1M LOC, 50 screens or NEEDS CLARIFICATION]                                                
 ## Constitution Check
-*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*                                                                 
+*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 Gates determined by the constitution:
    - Focus on a single API or problem domain.
    - Each resource represents a single API object.
@@ -40,9 +40,19 @@ Gates determined by the constitution:
    - Provider MUST implement comprehensive testing:
       - Unit tests for all provider functions and resource CRUD operations.
       - Integration tests with real API interactions.
-      - Acceptance tests following Terraform conventions (CRUD, import, error cases).
-      - Test coverage for critical paths (authentication, CRUD, error handling).
-      - Error simulation and CI integration.
+      - Acceptance tests following Terraform conventions (CRUD, import, error cases):
+         - Cover all resources/data sources (CRUD, import, error cases)
+         - Idempotent, repeatable, and clean up resources
+         - Use environment variables for credentials/config
+         - Import tests verify state matches API
+         - Error case tests simulate invalid configs and API errors
+         - Validate resource state after each operation
+         - Assert expected errors for negative cases
+         - Parallel execution where possible
+         - CI reporting and release blocking on failure
+         - Document how to run locally and in CI
+      - Test coverage for critical paths (authentication, CRUD, error handling)
+      - Error simulation and CI integration
 
 ## Project Structure
 
