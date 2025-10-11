@@ -51,6 +51,9 @@ func (e *Error) IsServerError() bool {
 
 // CheckResponse checks the API response for errors
 func CheckResponse(resp *Response) error {
+	if resp == nil {
+		return &Error{StatusCode: 0, Message: "nil response"}
+	}
 	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
 		return nil
 	}
