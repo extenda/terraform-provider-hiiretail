@@ -48,16 +48,18 @@
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
 Gates determined by the constitution:
-- Provider MUST use HashiCorp Terraform Plugin Framework for all development ([link](https://developer.hashicorp.com/terraform/plugin/framework)).
-- Provider MUST implement Terraform Plugin Protocol Version 6 ([link](https://developer.hashicorp.com/terraform/plugin/terraform-plugin-protocol#protocol-version-6)).
-- Provider MUST follow HashiCorp Provider Design Principles:
    - Focus on a single API or problem domain.
    - Each resource represents a single API object.
    - Resource and attribute schemas closely match the underlying API.
    - Resources MUST be importable.
    - Provider MUST maintain state continuity and backwards compatibility.
    - Provider MUST follow Semantic Versioning 2.0.0.
-- All other constitutional principles must be satisfied (CRUD, authentication, testing, documentation, etc).
+   - Provider MUST implement comprehensive testing:
+      - Unit tests for all provider functions and resource CRUD operations
+      - Integration tests with real API interactions
+      - Acceptance tests following Terraform conventions (CRUD, import, error cases)
+      - Test coverage for critical paths (authentication, CRUD, error handling)
+      - Error simulation and CI integration
 
 ## Project Structure
 

@@ -44,7 +44,16 @@ All resources declared in the provider specification MUST have full implementati
 OAuth2 client credentials flow MUST be implemented securely with proper token management, refresh handling, and credential validation. Sensitive configuration values must be marked as sensitive in schemas. API credentials must never be logged or exposed in debug output. All HTTP communications must use TLS encryption.
 
 ### IV. Testing & Validation
-Unit tests are mandatory for all provider functions and resource operations. Integration tests must validate actual API interactions with test environments. Acceptance tests following Terraform testing conventions are required before any release. Mock tests alone are insufficient - real API validation is essential.
+Providers MUST implement a comprehensive testing strategy covering:
+
+- **Unit Tests**: Validate all provider functions, resource CRUD operations, and error handling logic. Unit tests MUST isolate code from external dependencies using mocks or stubs.
+- **Integration Tests**: Exercise real API interactions in a test environment, validating authentication, resource lifecycle, and error scenarios. Integration tests MUST use dedicated test accounts and avoid destructive operations on production data.
+- **Acceptance Tests**: Follow [Terraform acceptance testing conventions](https://developer.hashicorp.com/terraform/plugin/testing/acceptance-tests). Acceptance tests MUST cover all resources and data sources, including create, update, delete, import, and error cases. Tests MUST be idempotent and clean up all resources after execution.
+- **Test Coverage**: All provider code MUST be covered by tests. Critical paths (authentication, resource CRUD, error handling) require 100% coverage. Non-critical code should achieve high coverage and be justified if excluded.
+- **Error Simulation**: Tests MUST simulate API errors, network failures, and invalid configurations to verify provider resilience and error reporting.
+- **CI Integration**: All tests MUST run in CI pipelines before release. Test failures MUST block releases until resolved.
+
+Mock tests alone are insufficient—real API validation is essential. Providers MUST document their testing strategy and provide instructions for running tests locally and in CI.
 
 ### V. Documentation & Examples
 Complete provider documentation including resource schemas, configuration examples, and usage patterns must be maintained. Each resource requires working examples showing typical usage scenarios. API compatibility and version requirements must be clearly documented. Migration guides required for breaking changes.
@@ -61,4 +70,4 @@ Code reviews must verify compliance with all constitutional principles. Provider
 
 This constitution supersedes all other development practices for the HiiRetail Terraform Providers project. Amendments require documentation of rationale, approval from project maintainers, and update of dependent templates and documentation. All development decisions must align with these principles - complexity that violates these standards must be justified or refactored.
 
-**Version**: 1.2.0 | **Ratified**: 2025-09-28 | **Last Amended**: 2025-10-11
+**Version**: 1.3.0 | **Ratified**: 2025-09-28 | **Last Amended**: 2025-10-11
