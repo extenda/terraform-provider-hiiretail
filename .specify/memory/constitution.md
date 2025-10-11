@@ -47,17 +47,24 @@ Providers MUST implement a comprehensive testing strategy covering:
 - **Unit Tests**: Validate all provider functions, resource CRUD operations, and error handling logic. Unit tests MUST isolate code from external dependencies using mocks or stubs.
 - **Integration Tests**: Exercise real API interactions in a test environment, validating authentication, resource lifecycle, and error scenarios. Integration tests MUST use dedicated test accounts and avoid destructive operations on production data.
 - **Acceptance Tests**: Providers MUST implement acceptance tests following [Terraform acceptance testing conventions](https://developer.hashicorp.com/terraform/plugin/testing/acceptance-tests):
-    - Acceptance tests MUST cover all resources and data sources, including create, update, delete, import, and error cases.
-    - Each test MUST be idempotent, repeatable, and clean up all resources after execution.
-    - Tests MUST use the Terraform Plugin Testing framework and be structured for parallel execution where possible.
-    - Tests MUST use environment variables for credentials and configuration; never hardcode secrets.
-    - Import tests MUST verify that resources can be imported and state matches the API.
-    - Error case tests MUST simulate invalid configurations, API errors, and permission issues.
-    - Tests MUST validate resource state after each operation and assert expected errors for negative cases.
-    - All acceptance tests MUST report results in CI and block releases on failure.
-    - Providers MUST document how to run acceptance tests locally and in CI, including required environment variables and cleanup procedures.
+   - Acceptance tests MUST cover all resources and data sources, including create, update, delete, import, and error cases.
+   - Each test MUST be idempotent, repeatable, and clean up all resources after execution.
+   - Tests MUST use the Terraform Plugin Testing framework and be structured for parallel execution where possible.
+   - Tests MUST use environment variables for credentials and configuration; never hardcode secrets.
+   - Import tests MUST verify that resources can be imported and state matches the API.
+   - Error case tests MUST simulate invalid configurations, API errors, and permission issues.
+   - Tests MUST validate resource state after each operation and assert expected errors for negative cases.
+   - All acceptance tests MUST report results in CI and block releases on failure.
+   - Providers MUST document how to run acceptance tests locally and in CI, including required environment variables and cleanup procedures.
+   - Acceptance test cases MUST use the [TestCase](https://developer.hashicorp.com/terraform/plugin/testing/acceptance-tests/testcase) struct to define test steps, configuration, and checks. Each TestCase MUST:
+       - Specify preconditions and postconditions for resource state.
+       - Use `CheckFunc` to assert resource attributes and error expectations.
+       - Include steps for create, update, import, and destroy operations.
+       - Simulate error scenarios and validate error messages.
+       - Clean up all resources after test execution.
+       - Be documented with rationale and expected outcomes.
 
-- **Test Coverage**: All provider code SHOULD be covered by tests. Critical paths (authentication, resource CRUD, error handling) require very high coverage and must be exercised by tests. Non-critical code should achieve high coverage or be justified if excluded.
+- **Test Coverage**: All provider code MUST be covered by tests. Critical paths (authentication, resource CRUD, error handling) require 100% coverage. Non-critical code should achieve high coverage and be justified if excluded.
 - **Error Simulation**: Tests MUST simulate API errors, network failures, and invalid configurations to verify provider resilience and error reporting.
 - **CI Integration**: Tests MUST run in CI pipelines before release; failing tests should block releases until resolved.
 
