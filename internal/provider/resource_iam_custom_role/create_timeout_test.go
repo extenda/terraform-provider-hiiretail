@@ -1,11 +1,6 @@
 package resource_iam_custom_role
 
-import (
-	"context"
-	"fmt"
-	"net/http"
-	"testing"
-	"time"
+import "testing"
 
 	"github.com/extenda/hiiretail-terraform-providers/internal/provider/testutils"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
