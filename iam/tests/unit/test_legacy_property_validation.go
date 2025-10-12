@@ -165,13 +165,13 @@ func TestLegacyPropertyStructureValidation(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			diags := tt.input.Validate()
-			
+
 			// These tests MUST fail until implementation is complete in Phase 3.3
 			if tt.expectedResult == "valid" {
 				// Should have deprecation warnings when properly implemented
 				assert.True(t, diags.HasError(), "Test should fail until validation logic is implemented in Phase 3.3")
 			} else {
-				// Should have expected validation errors when properly implemented  
+				// Should have expected validation errors when properly implemented
 				assert.True(t, diags.HasError(), "Test should fail until validation logic is implemented in Phase 3.3")
 			}
 		})
@@ -183,7 +183,7 @@ func TestLegacyPropertyConstraints(t *testing.T) {
 	t.Run("MemberTypeValidation", func(t *testing.T) {
 		validMemberTypes := []string{"person", "service", "group", "application"}
 		invalidMemberTypes := []string{"unknown", "invalid", ""}
-		
+
 		for _, validType := range validMemberTypes {
 			t.Run("ValidType_"+validType, func(t *testing.T) {
 				model := RoleBindingResourceModel{
@@ -218,7 +218,7 @@ func TestLegacyPropertyConstraints(t *testing.T) {
 				assert.True(t, diags.HasError(), "Test should fail until validation logic is implemented")
 			})
 		}
-		
+
 		for _, invalidType := range invalidMemberTypes {
 			t.Run("InvalidType_"+invalidType, func(t *testing.T) {
 				model := RoleBindingResourceModel{
@@ -254,7 +254,7 @@ func TestLegacyPropertyConstraints(t *testing.T) {
 			})
 		}
 	})
-	
+
 	t.Run("RequiredMemberFields", func(t *testing.T) {
 		// Test that type and resource_id are required, display_name is optional
 		t.Run("MissingType", func(t *testing.T) {
@@ -288,7 +288,7 @@ func TestLegacyPropertyConstraints(t *testing.T) {
 			diags := model.Validate()
 			assert.True(t, diags.HasError(), "Test should fail until validation logic is implemented")
 		})
-		
+
 		t.Run("MissingResourceID", func(t *testing.T) {
 			model := RoleBindingResourceModel{
 				Name: types.StringValue("test_group"),

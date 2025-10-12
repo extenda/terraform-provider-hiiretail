@@ -23,8 +23,8 @@ func TestStateManagement(t *testing.T) {
 
 		// Test state upgrade function (will be implemented in T029)
 		newState, diags := upgradeState(ctx, legacyState) // This function doesn't exist yet
-		
-		// This test should fail until T029 is implemented  
+
+		// This test should fail until T029 is implemented
 		assert.True(t, diags.HasError(), "State upgrade not yet implemented")
 		assert.Nil(t, newState, "State upgrade should return nil until implemented")
 	})
@@ -38,7 +38,7 @@ func TestStateManagement(t *testing.T) {
 
 		// Test state downgrade function (will be implemented in T029)
 		legacyState, diags := downgradeState(ctx, newState) // This function doesn't exist yet
-		
+
 		// This test should fail until T029 is implemented
 		assert.True(t, diags.HasError(), "State downgrade not yet implemented")
 		assert.Nil(t, legacyState, "State downgrade should return nil until implemented")
@@ -53,7 +53,7 @@ func TestStateManagement(t *testing.T) {
 
 		// Test state migration function (will be implemented in T029)
 		migratedState, diags := migrateState(ctx, originalState) // This function doesn't exist yet
-		
+
 		// This test should fail until T029 is implemented
 		assert.True(t, diags.HasError(), "State migration not yet implemented")
 		assert.Nil(t, migratedState, "State migration should return nil until implemented")
@@ -100,14 +100,14 @@ func TestStateValidation(t *testing.T) {
 			Name: types.StringValue("from_group"),
 			Role: types.StringValue("from_role"),
 		}
-		
+
 		toState := RoleBindingResourceModel{
 			GroupID: types.StringValue("to_group"),
 		}
 
 		// Test state transition validation (will be implemented in T029)
 		isValid, diags := validateStateTransition(ctx, fromState, toState) // This function doesn't exist yet
-		
+
 		// This test should fail until T029 is implemented
 		assert.False(t, isValid, "State transition validation not yet implemented")
 		assert.True(t, diags.HasError(), "Should have error until implemented")
@@ -122,8 +122,8 @@ func TestStateValidation(t *testing.T) {
 
 		// Test state consistency validation (will be implemented in T029)
 		isConsistent, diags := validateStateConsistency(ctx, state) // This function doesn't exist yet
-		
-		// This test should fail until T029 is implemented  
+
+		// This test should fail until T029 is implemented
 		assert.False(t, isConsistent, "State consistency validation not yet implemented")
 		assert.True(t, diags.HasError(), "Should have error until implemented")
 	})
@@ -153,51 +153,51 @@ func validateStateConsistency(ctx context.Context, state RoleBindingResourceMode
 func TestStateManagementRequirements(t *testing.T) {
 	t.Run("StateManagementRequirementsDocumentation", func(t *testing.T) {
 		// This test documents what the state management functions should do when implemented in T029-T030
-		
+
 		// State upgrade should:
 		// 1. Convert legacy state structure to new structure
 		// 2. Preserve all data during conversion
 		// 3. Add deprecation warnings for legacy properties
 		// 4. Validate converted state
 		// 5. Handle edge cases (null values, empty lists, etc.)
-		
+
 		// State downgrade should:
-		// 1. Convert new state structure to legacy structure  
+		// 1. Convert new state structure to legacy structure
 		// 2. Handle multiple roles (use first, warn about others)
 		// 3. Preserve data integrity
 		// 4. Validate converted state
 		// 5. Provide clear warnings about feature limitations
-		
+
 		// State migration should:
 		// 1. Detect current state format (legacy vs new)
 		// 2. Apply appropriate conversion
 		// 3. Preserve all user data
 		// 4. Handle versioning correctly
 		// 5. Provide clear diagnostics for any issues
-		
+
 		// For now, just verify this test runs (will be enhanced in T029)
 		assert.True(t, true, "State management requirements documented for T029-T030 implementation")
 	})
 
 	t.Run("StateManagementEdgeCases", func(t *testing.T) {
 		// Test edge cases that state management must handle
-		
+
 		// Edge case 1: Null values in state
 		stateWithNulls := RoleBindingResourceModel{
 			Name:    types.StringNull(),
 			GroupID: types.StringNull(),
 		}
-		
-		// Edge case 2: Unknown values in state  
+
+		// Edge case 2: Unknown values in state
 		stateWithUnknowns := RoleBindingResourceModel{
 			Name:    types.StringUnknown(),
 			GroupID: types.StringUnknown(),
 		}
-		
+
 		// These should be handled gracefully when state management is implemented
 		assert.NotNil(t, stateWithNulls, "State with nulls should be handled")
 		assert.NotNil(t, stateWithUnknowns, "State with unknowns should be handled")
-		
+
 		// For now, just verify this test runs (will be enhanced in T029)
 		assert.True(t, true, "State management edge cases documented for T029 implementation")
 	})

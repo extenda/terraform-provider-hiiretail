@@ -18,7 +18,7 @@ func TestMixedPropertyUsageErrors(t *testing.T) {
 		{
 			name: "MixedGroupIDAndName",
 			input: RoleBindingResourceModel{
-				GroupID: types.StringValue("new_group"),  // New property
+				GroupID: types.StringValue("new_group"),   // New property
 				Name:    types.StringValue("legacy_name"), // Legacy property
 			},
 			expectedError: "Cannot use both legacy properties (name, role, members) and new properties (group_id, roles, binding) simultaneously",
@@ -172,11 +172,11 @@ func TestMixedPropertyUsageErrors(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			diags := tt.input.Validate()
-			
+
 			// These tests MUST fail until implementation is complete in Phase 3.3
 			// When properly implemented, should have the expected mixed property error
 			assert.True(t, diags.HasError(), "Test should fail until validation logic is implemented in Phase 3.3")
-			
+
 			// TODO: When validation is implemented, check for specific error message:
 			// assert.Contains(t, diags.Errors()[0].Summary(), tt.expectedError)
 		})
@@ -188,41 +188,41 @@ func TestPropertyConflictDetection(t *testing.T) {
 	t.Run("ConflictDetectionLogic", func(t *testing.T) {
 		// Test that the validation logic can detect conflicts correctly
 		// This will be implemented in T031 - Property conflict validation logic
-		
+
 		type conflictTest struct {
-			name              string
+			name             string
 			hasLegacyProps   bool
 			hasNewProps      bool
 			expectedConflict bool
 		}
-		
+
 		conflictTests := []conflictTest{
 			{
-				name:              "OnlyNewProperties",
+				name:             "OnlyNewProperties",
 				hasLegacyProps:   false,
 				hasNewProps:      true,
 				expectedConflict: false,
 			},
 			{
-				name:              "OnlyLegacyProperties",
+				name:             "OnlyLegacyProperties",
 				hasLegacyProps:   true,
 				hasNewProps:      false,
 				expectedConflict: false,
 			},
 			{
-				name:              "BothPropertiesPresent",
+				name:             "BothPropertiesPresent",
 				hasLegacyProps:   true,
 				hasNewProps:      true,
 				expectedConflict: true,
 			},
 			{
-				name:              "NoPropertiesPresent",
+				name:             "NoPropertiesPresent",
 				hasLegacyProps:   false,
 				hasNewProps:      false,
 				expectedConflict: false, // Should be handled as missing required properties, not conflict
 			},
 		}
-		
+
 		for _, ct := range conflictTests {
 			t.Run(ct.name, func(t *testing.T) {
 				// This logic will be implemented in Phase 3.3
@@ -231,7 +231,7 @@ func TestPropertyConflictDetection(t *testing.T) {
 			})
 		}
 	})
-	
+
 	t.Run("PartialConflicts", func(t *testing.T) {
 		// Test partial conflicts (e.g., only one legacy property with new properties)
 		partialConflictCombinations := []struct {
@@ -251,7 +251,7 @@ func TestPropertyConflictDetection(t *testing.T) {
 				description: "Legacy 'members' property with new 'group_id' property",
 			},
 		}
-		
+
 		for _, combo := range partialConflictCombinations {
 			t.Run(combo.name, func(t *testing.T) {
 				// These combinations should also trigger conflicts
@@ -285,13 +285,13 @@ func TestConfigurationModeDetection(t *testing.T) {
 				[]attr.Value{},
 			),
 		}
-		
+
 		// Should detect new configuration mode
 		// This will be implemented in T026 - Configuration mode validation
 		diags := model.Validate()
 		assert.True(t, diags.HasError(), "Configuration mode detection not yet implemented")
 	})
-	
+
 	t.Run("DetectLegacyConfigurationMode", func(t *testing.T) {
 		model := RoleBindingResourceModel{
 			Name: types.StringValue("legacy_group"),
@@ -307,18 +307,18 @@ func TestConfigurationModeDetection(t *testing.T) {
 				[]attr.Value{},
 			),
 		}
-		
+
 		// Should detect legacy configuration mode
 		// This will be implemented in T026 - Configuration mode validation
 		diags := model.Validate()
 		assert.True(t, diags.HasError(), "Configuration mode detection not yet implemented")
 	})
-	
+
 	t.Run("DetectEmptyConfiguration", func(t *testing.T) {
 		model := RoleBindingResourceModel{
 			// No properties set
 		}
-		
+
 		// Should detect that no valid configuration is present
 		// This will be implemented in T026 - Configuration mode validation
 		diags := model.Validate()

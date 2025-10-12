@@ -369,28 +369,28 @@ func (suite *OAuth2IntegrationTestSuite) TestConcurrentOAuth2Operations() {
 
 // Test token refresh scenarios
 func (suite *OAuth2IntegrationTestSuite) TestTokenRefreshScenarios() {
-       // Removed token refresh scenario test: not required for current implementation
+	// Removed token refresh scenario test: not required for current implementation
 }
 
 // Test error handling scenarios
 func (suite *OAuth2IntegrationTestSuite) TestErrorHandlingScenarios() {
 	ctx := context.Background()
 
-       testCases := []struct {
-	       name          string
-	       serverHandler http.HandlerFunc
-	       expectedError string
-	       expectedType  AuthErrorType
-       }{
-	       {
-		       name: "invalid_credentials",
-		       serverHandler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			       suite.respondWithError(w, http.StatusUnauthorized, "invalid_client", "OAuth2 authentication failed")
-		       }),
-		       expectedError: "OAuth2 authentication failed",
-		       expectedType:  AuthErrorCredentials,
-	       },
-       }
+	testCases := []struct {
+		name          string
+		serverHandler http.HandlerFunc
+		expectedError string
+		expectedType  AuthErrorType
+	}{
+		{
+			name: "invalid_credentials",
+			serverHandler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				suite.respondWithError(w, http.StatusUnauthorized, "invalid_client", "OAuth2 authentication failed")
+			}),
+			expectedError: "OAuth2 authentication failed",
+			expectedType:  AuthErrorCredentials,
+		},
+	}
 
 	for _, tc := range testCases {
 		suite.Run(tc.name, func() {
