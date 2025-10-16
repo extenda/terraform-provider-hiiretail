@@ -80,6 +80,13 @@ func Test_makeAPIRequest_SuccessAnd404AndRetry(t *testing.T) {
 	require.Equal(t, 200, resp.StatusCode)
 }
 
+func TestSimpleHTTPError(t *testing.T) {
+	r := NewIamGroupResource().(*IamGroupResource)
+	err := r.mapHTTPError(404, errors.New("test"))
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "group not found")
+}
+
 func Test_unmarshal_and_marshal_errors_and_helpers(t *testing.T) {
 	r := NewIamGroupResource().(*IamGroupResource)
 	r.client = &http.Client{}
@@ -110,7 +117,7 @@ func Test_unmarshal_and_marshal_errors_and_helpers(t *testing.T) {
 	require.False(t, r.isRetryableError(errors.New("not found")))
 }
 
-func Test_mapHTTPError_AllCases(t *testing.T) {
+func TestMapHTTPErrorCases(t *testing.T) {
 	r := NewIamGroupResource().(*IamGroupResource)
 
 	testCases := []struct {

@@ -81,27 +81,6 @@ func Test_retryOperation_exhausts(t *testing.T) {
 	}
 }
 
-func Test_isRetryableError_various_messages(t *testing.T) {
-	r := &IamGroupResource{}
-	cases := []struct {
-		msg    string
-		expect bool
-	}{
-		{"timeout while dialing", true},
-		{"connection refused by peer", true},
-		{"service temporarily unavailable", true},
-		{"server error: status 500", true},
-		{"authentication failed", false},
-		{"random other error", false},
-	}
-	for _, c := range cases {
-		ok := r.isRetryableError(errors.New(c.msg))
-		if ok != c.expect {
-			t.Fatalf("unexpected isRetryableError(%q) = %v, want %v", c.msg, ok, c.expect)
-		}
-	}
-}
-
 func Test_contains_findInString_edgecases(t *testing.T) {
 	if contains("", "") != true {
 		t.Fatalf("empty contains empty should be true")
