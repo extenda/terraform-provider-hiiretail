@@ -61,6 +61,26 @@ func (m *mockRawClient) Do(ctx context.Context, req *client.Request) (*client.Re
 	return &client.Response{StatusCode: 200}, nil
 }
 
+// mockRawClientNotFound returns 404 for delete operations
+type mockRawClientNotFound struct{}
+
+func (m *mockRawClientNotFound) Do(ctx context.Context, req *client.Request) (*client.Response, error) {
+	if req.Method == "DELETE" {
+		return &client.Response{StatusCode: 404, Body: []byte(`{"error": "Resource not found"}`)}, nil
+	}
+	return &client.Response{StatusCode: 200}, nil
+}
+
+// mockRawClientError returns an error for delete operations
+type mockRawClientError struct{}
+
+func (m *mockRawClientError) Do(ctx context.Context, req *client.Request) (*client.Response, error) {
+	if req.Method == "DELETE" {
+		return &client.Response{StatusCode: 500, Body: []byte(`{"error": "Internal server error"}`)}, nil
+	}
+	return &client.Response{StatusCode: 200}, nil
+}
+
 func newTestService() *iam.Service {
 	s := &iam.Service{}
 	// Use unsafe to set private fields if needed
@@ -69,6 +89,34 @@ func newTestService() *iam.Service {
 	rawClientField := v.FieldByName("rawClient")
 	rawClientPtr := unsafe.Pointer(rawClientField.UnsafeAddr())
 	*(*iam.RawClient)(rawClientPtr) = &mockRawClient{}
+
+	tenantIDField := v.FieldByName("tenantID")
+	tenantIDPtr := unsafe.Pointer(tenantIDField.UnsafeAddr())
+	*(*string)(tenantIDPtr) = "test-tenant"
+
+	return s
+}
+
+func newTestServiceNotFound() *iam.Service {
+	s := &iam.Service{}
+	v := reflect.ValueOf(s).Elem()
+	rawClientField := v.FieldByName("rawClient")
+	rawClientPtr := unsafe.Pointer(rawClientField.UnsafeAddr())
+	*(*iam.RawClient)(rawClientPtr) = &mockRawClientNotFound{}
+
+	tenantIDField := v.FieldByName("tenantID")
+	tenantIDPtr := unsafe.Pointer(tenantIDField.UnsafeAddr())
+	*(*string)(tenantIDPtr) = "test-tenant"
+
+	return s
+}
+
+func newTestServiceError() *iam.Service {
+	s := &iam.Service{}
+	v := reflect.ValueOf(s).Elem()
+	rawClientField := v.FieldByName("rawClient")
+	rawClientPtr := unsafe.Pointer(rawClientField.UnsafeAddr())
+	*(*iam.RawClient)(rawClientPtr) = &mockRawClientError{}
 
 	tenantIDField := v.FieldByName("tenantID")
 	tenantIDPtr := unsafe.Pointer(tenantIDField.UnsafeAddr())
@@ -308,6 +356,87 @@ func TestIAMResource_Delete_Success(t *testing.T) {
 		t.Logf("Delete diagnostics: %v", dresp.Diagnostics.Errors())
 	}
 	require.False(t, dresp.Diagnostics.HasError())
+}
+
+func TestIAMResource_Delete_EmptyID(t *testing.T) {
+	r := NewIAMResourceResource().(*IAMResourceResource)
+	setServiceField(r, newTestService())
+
+	data := IAMResourceResourceModel{
+		ID:       types.StringValue(""), // empty ID
+		Name:     types.StringValue("test-resource"),
+		Props:    types.StringNull(),
+		TenantID: types.StringNull(),
+	}
+
+	var schemaResp resource.SchemaResponse
+	r.Schema(context.Background(), resource.SchemaRequest{}, &schemaResp)
+	schema := schemaResp.Schema
+
+	var dreq resource.DeleteRequest
+	dreq.State.Schema = schema
+	diags := dreq.State.Set(context.Background(), data)
+	require.False(t, diags.HasError())
+
+	var dresp resource.DeleteResponse
+
+	r.Delete(context.Background(), dreq, &dresp)
+	require.True(t, dresp.Diagnostics.HasError())
+	require.Contains(t, dresp.Diagnostics.Errors()[0].Detail(), "Resource ID is required")
+}
+
+func TestIAMResource_Delete_AlreadyGone(t *testing.T) {
+	r := NewIAMResourceResource().(*IAMResourceResource)
+	setServiceField(r, newTestServiceNotFound())
+
+	data := IAMResourceResourceModel{
+		ID:       types.StringValue("test-id"),
+		Name:     types.StringValue("test-resource"),
+		Props:    types.StringNull(),
+		TenantID: types.StringNull(),
+	}
+
+	var schemaResp resource.SchemaResponse
+	r.Schema(context.Background(), resource.SchemaRequest{}, &schemaResp)
+	schema := schemaResp.Schema
+
+	var dreq resource.DeleteRequest
+	dreq.State.Schema = schema
+	diags := dreq.State.Set(context.Background(), data)
+	require.False(t, diags.HasError())
+
+	var dresp resource.DeleteResponse
+
+	r.Delete(context.Background(), dreq, &dresp)
+	// Should not have errors for 404 (resource already gone)
+	require.False(t, dresp.Diagnostics.HasError())
+}
+
+func TestIAMResource_Delete_APIError(t *testing.T) {
+	r := NewIAMResourceResource().(*IAMResourceResource)
+	setServiceField(r, newTestServiceError())
+
+	data := IAMResourceResourceModel{
+		ID:       types.StringValue("test-id"),
+		Name:     types.StringValue("test-resource"),
+		Props:    types.StringNull(),
+		TenantID: types.StringNull(),
+	}
+
+	var schemaResp resource.SchemaResponse
+	r.Schema(context.Background(), resource.SchemaRequest{}, &schemaResp)
+	schema := schemaResp.Schema
+
+	var dreq resource.DeleteRequest
+	dreq.State.Schema = schema
+	diags := dreq.State.Set(context.Background(), data)
+	require.False(t, diags.HasError())
+
+	var dresp resource.DeleteResponse
+
+	r.Delete(context.Background(), dreq, &dresp)
+	// Should have errors for API failures (non-404)
+	require.True(t, dresp.Diagnostics.HasError())
 }
 
 func TestIAMResource_ImportState_InvalidID(t *testing.T) {
