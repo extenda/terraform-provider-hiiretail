@@ -140,3 +140,43 @@ func TestMapHTTPErrorCases(t *testing.T) {
 		require.Contains(t, err.Error(), tc.expected)
 	}
 }
+
+// captureRT records the request it receives and returns a prebuilt response.
+type captureRT struct {
+	req  *http.Request
+	resp *http.Response
+}
+
+func (c *captureRT) RoundTrip(req *http.Request) (*http.Response, error) {
+	c.req = req
+	return c.resp, nil
+}
+
+func Test_makeAPIRequest_PostWithBody_SetsContentType(t *testing.T) {
+	ctx := context.Background()
+	r := NewIamGroupResource().(*IamGroupResource)
+
+	// Prepare a response and a transport that captures the request
+	resp := makeResp(201, `{"created":true}`)
+	capt := &captureRT{resp: resp}
+	r.client = &http.Client{Transport: capt}
+	r.baseURL = "https://api.test"
+	r.tenantID = "t1"
+
+	body := []byte(`{"name":"example"}`)
+	gotResp, err := r.makeAPIRequest(ctx, http.MethodPost, "/create", body)
+	if err != nil {
+		t.Fatalf("unexpected error from makeAPIRequest: %v", err)
+	}
+	if gotResp == nil || gotResp.StatusCode != 201 {
+		t.Fatalf("unexpected response: %v", gotResp)
+	}
+
+	if capt.req == nil {
+		t.Fatalf("expected transport to receive a request")
+	}
+	// Content-Type should be set when body is provided
+	if ct := capt.req.Header.Get("Content-Type"); ct != "application/json" {
+		t.Fatalf("expected Content-Type application/json, got %q", ct)
+	}
+}

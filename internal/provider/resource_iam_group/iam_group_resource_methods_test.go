@@ -2,6 +2,7 @@ package resource_iam_group
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -111,4 +112,32 @@ func TestIamGroup_Read_Update_Delete_Import(t *testing.T) {
 	var imported IamGroupModel
 	_ = iresp.State.Get(ctx, &imported)
 	require.Equal(t, "imported-1", imported.Id.ValueString())
+}
+
+func Test_makeAPIRequest_UnexpectedStatusDefaultMaps(t *testing.T) {
+	ctx := context.Background()
+	r := NewIamGroupResource().(*IamGroupResource)
+
+	// Return a 418 to hit the default case in mapHTTPError via makeAPIRequest
+	seq := &seqRoundTripper{responses: []*http.Response{makeResp(418, `I'm a teapot`)}}
+	r.client = &http.Client{Transport: seq}
+	r.baseURL = "https://api.test"
+	r.tenantID = "t1"
+
+	_, err := r.makeAPIRequest(ctx, http.MethodGet, "/teapot", nil)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "unexpected HTTP status 418")
+}
+
+func Test_Configure_InvalidProviderDataProducesDiagnostic(t *testing.T) {
+	ctx := context.Background()
+	r := NewIamGroupResource().(*IamGroupResource)
+
+	// Pass provider data that's not a struct/expected type to Configure
+	var req resource.ConfigureRequest
+	req.ProviderData = "not-a-struct"
+	var resp resource.ConfigureResponse
+
+	r.Configure(ctx, req, &resp)
+	require.True(t, resp.Diagnostics.HasError())
 }
