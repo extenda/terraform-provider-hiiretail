@@ -154,7 +154,6 @@ func TestHiiRetailProvider_Configure(t *testing.T) {
 					"scopes":          tftypes.Set{ElementType: tftypes.String},
 					"timeout_seconds": tftypes.Number,
 					"max_retries":     tftypes.Number,
-					"tenant_id":       tftypes.String,
 				},
 			}, tc.config)
 
@@ -189,17 +188,16 @@ func TestHiiRetailProvider_Configure(t *testing.T) {
 								break
 							}
 						}
-						if !foundInDetail {
-							foundInAny := false
-							for _, err := range resp.Diagnostics.Errors() {
-								if contains(fmt.Sprintf("%v", err), tc.expectedError) {
-									foundInAny = true
-									break
-								}
+						// Fall back to searching the entire diagnostic string for the expected substring
+						foundInAny := false
+						for _, d := range resp.Diagnostics.Errors() {
+							if contains(fmt.Sprintf("%v", d), tc.expectedError) {
+								foundInAny = true
+								break
 							}
-							if !foundInAny {
-								t.Errorf("Expected error containing '%s', but got: %v", tc.expectedError, resp.Diagnostics.Errors())
-							}
+						}
+						if !foundInAny {
+							t.Errorf("Expected error containing '%s', but got: %v", tc.expectedError, resp.Diagnostics.Errors())
 						}
 					}
 					if !found {

@@ -61,15 +61,11 @@ func TestRoleBindingModelValidation(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			roles := []RoleModel{
-				{
-					Id:       types.StringValue(tt.roleId),
-					IsCustom: types.BoolValue(tt.isCustom),
-					Bindings: types.ListValueMust(types.StringType, stringSliceToAttrValues(tt.bindings)),
-				},
+			role := RoleModel{
+				Id:       types.StringValue(tt.roleId),
+				IsCustom: types.BoolValue(tt.isCustom),
+				Bindings: types.ListValueMust(types.StringType, stringSliceToAttrValues(tt.bindings)),
 			}
-			err := ValidateRoleBindingModel(context.Background(), roles)
-
 			err := ValidateRoleBindingModel(context.Background(), []RoleModel{role})
 			if tt.expectedValid {
 				if err != nil {
@@ -79,9 +75,7 @@ func TestRoleBindingModelValidation(t *testing.T) {
 				if err == nil {
 					t.Errorf("Expected validation to fail for %s, but got no error", tt.name)
 				} else if tt.expectedError != "" {
-					if err == nil {
-						t.Errorf("Expected error message containing '%s', got nil", tt.expectedError)
-					} else if !containsSubstring(err.Error(), tt.expectedError) {
+					if !containsSubstring(err.Error(), tt.expectedError) {
 						t.Errorf("Expected error message containing '%s', got '%s'", tt.expectedError, err.Error())
 					}
 				}
