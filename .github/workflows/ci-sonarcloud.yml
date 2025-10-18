@@ -63,3 +63,4 @@ jobs:
           args: >
             -Dsonar.organization=extenda
             -Dsonar.projectKey=extenda_terraform-provider-hiiretail
+            -Dsonar.go.coverage.reportPaths=coverage.out
