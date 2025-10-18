@@ -135,3 +135,9 @@ vendor/
 .env
 .env.local
 .env.*.local
+# Ignore merge/patch backup files commonly produced during rebases/merges
+.specify/*.orig
+.specify/*_BACKUP_*.md
+.specify/*_BASE_*.md
+.specify/*_LOCAL_*.md
+.specify/*_REMOTE_*.md
