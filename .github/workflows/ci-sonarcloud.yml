@@ -35,6 +35,30 @@ jobs:
           HIIRETAIL_CLIENT_SECRET: dummy-client-secret
           HIIRETAIL_TENANT_ID: dummy-tenant-id
         run: go test -coverprofile=coverage.out ./...
+      - name: Check coverage threshold for service.go
+        env:
+          HIIRETAIL_CLIENT_ID: dummy-client-id
+          HIIRETAIL_CLIENT_SECRET: dummy-client-secret
+          HIIRETAIL_TENANT_ID: dummy-tenant-id
+        run: |
+          # Run tests for the iam package and generate coverage
+          go test -coverprofile=coverage.out ./internal/provider/iam
+          # Extract the coverage percentage as a float (e.g., 92.3%) and remove the trailing '%'
+          COVERAGE=$(go tool cover -func=coverage.out | awk '/service.go:/ {gsub(/%/,"",$3); print $3}')
+          # If COVERAGE is empty or not a number, fail early
+          if ! echo "$COVERAGE" | grep -E '^[0-9]+(\.[0-9]+)?$' >/dev/null; then
+            echo "ERROR: Could not parse coverage value for service.go: '$COVERAGE'"
+            exit 1
+          fi
+          # Compare as float using bc; threshold is 90.0
+          THRESHOLD=90.0
+          cmp=$(echo "$COVERAGE < $THRESHOLD" | bc -l)
+          if [ "$cmp" -eq 1 ]; then
+            echo "ERROR: Code coverage for service.go is below ${THRESHOLD}% ($COVERAGE%)"
+            exit 1
+          else
+            echo "Code coverage for service.go is $COVERAGE% (threshold: ${THRESHOLD}%)"
+          fi
       - name: Fetch sonarcloud token
         uses: extenda/actions/gcp-secret-manager@v0
         with:
@@ -48,3 +72,4 @@ jobs:
           args: >
             -Dsonar.organization=extenda
             -Dsonar.projectKey=extenda_terraform-provider-hiiretail
+            -Dsonar.go.coverage.reportPaths=coverage.out

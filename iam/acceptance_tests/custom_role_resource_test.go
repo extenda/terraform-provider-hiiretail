@@ -21,10 +21,10 @@ func setupAcceptanceTestEnvironment(t *testing.T) {
 
 func TestAccIamCustomRole_basic(t *testing.T) {
 	// T028: Basic acceptance test for IAM Custom Role resource
-	
+
 	// Set TF_ACC environment variable for this test
 	t.Setenv("TF_ACC", "1")
-	
+
 	// Set up test environment with mock server
 	env := testutils.SetupTestEnvironment(t)
 	env.SetupMockServer(t)

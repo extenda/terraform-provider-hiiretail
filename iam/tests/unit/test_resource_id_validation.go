@@ -22,7 +22,7 @@ func TestResourceIDFormatValidation(t *testing.T) {
 		"resource_with_long_name_123",
 		"mixed-underscore_and-hyphen123",
 	}
-	
+
 	// Invalid resource ID patterns
 	invalidResourceIDs := []struct {
 		id     string
@@ -41,25 +41,25 @@ func TestResourceIDFormatValidation(t *testing.T) {
 		{"", "empty string"},
 		{"123", "numeric only (debatable, but current pattern requires alphanumeric start)"},
 	}
-	
+
 	t.Run("ValidResourceIDFormats", func(t *testing.T) {
 		for _, validID := range validResourceIDs {
 			t.Run("Valid_"+validID, func(t *testing.T) {
 				// Test resource ID validation function (will be implemented in T025)
-				isValid := validateResourceID(validID)  // This function doesn't exist yet
-				
+				isValid := validateResourceID(validID) // This function doesn't exist yet
+
 				// This test should fail until T025 is implemented
 				assert.False(t, isValid, "Resource ID validation not yet implemented - test should fail")
 			})
 		}
 	})
-	
+
 	t.Run("InvalidResourceIDFormats", func(t *testing.T) {
 		for _, invalid := range invalidResourceIDs {
 			t.Run("Invalid_"+invalid.id+"_"+invalid.reason, func(t *testing.T) {
 				// Test resource ID validation function (will be implemented in T025)
-				isValid := validateResourceID(invalid.id)  // This function doesn't exist yet
-				
+				isValid := validateResourceID(invalid.id) // This function doesn't exist yet
+
 				// This test should fail until T025 is implemented
 				assert.True(t, isValid, "Resource ID validation not yet implemented - test should fail")
 			})
@@ -79,7 +79,7 @@ func TestResourceIDValidationInNewProperties(t *testing.T) {
 	t.Run("GroupIDValidation", func(t *testing.T) {
 		validGroupIDs := []string{"valid_group", "group123", "test-group"}
 		invalidGroupIDs := []string{"-invalid", "invalid-", "invalid@char"}
-		
+
 		for _, validID := range validGroupIDs {
 			t.Run("ValidGroupID_"+validID, func(t *testing.T) {
 				model := RoleBindingResourceModel{
@@ -90,7 +90,7 @@ func TestResourceIDValidationInNewProperties(t *testing.T) {
 				assert.True(t, diags.HasError(), "Group ID validation not yet implemented")
 			})
 		}
-		
+
 		for _, invalidID := range invalidGroupIDs {
 			t.Run("InvalidGroupID_"+invalidID, func(t *testing.T) {
 				model := RoleBindingResourceModel{
@@ -102,12 +102,12 @@ func TestResourceIDValidationInNewProperties(t *testing.T) {
 			})
 		}
 	})
-	
+
 	t.Run("RoleIDValidation", func(t *testing.T) {
 		// Role IDs should follow the same format as other resource IDs
 		validRoleIDs := []string{"valid_role", "role123", "custom-role"}
 		invalidRoleIDs := []string{"-invalid", "invalid-", "invalid@char"}
-		
+
 		for _, validID := range validRoleIDs {
 			t.Run("ValidRoleID_"+validID, func(t *testing.T) {
 				// Test will be implemented when RoleModel validation is added - T025
@@ -117,7 +117,7 @@ func TestResourceIDValidationInNewProperties(t *testing.T) {
 				assert.False(t, isValid, "Role ID validation not yet implemented - should fail")
 			})
 		}
-		
+
 		for _, invalidID := range invalidRoleIDs {
 			t.Run("InvalidRoleID_"+invalidID, func(t *testing.T) {
 				// Test will be implemented when RoleModel validation is added - T025
@@ -128,12 +128,12 @@ func TestResourceIDValidationInNewProperties(t *testing.T) {
 			})
 		}
 	})
-	
+
 	t.Run("BindingResourceIDValidation", func(t *testing.T) {
 		// Binding resource IDs should follow the same format
 		validBindingIDs := []string{"person_123", "service_456", "group_789"}
 		invalidBindingIDs := []string{"-invalid", "invalid-", "invalid@char"}
-		
+
 		for _, validID := range validBindingIDs {
 			t.Run("ValidBindingID_"+validID, func(t *testing.T) {
 				// Test will be implemented when BindingModel validation is added - T025
@@ -143,7 +143,7 @@ func TestResourceIDValidationInNewProperties(t *testing.T) {
 				assert.False(t, isValid, "Binding resource ID validation not yet implemented - should fail")
 			})
 		}
-		
+
 		for _, invalidID := range invalidBindingIDs {
 			t.Run("InvalidBindingID_"+invalidID, func(t *testing.T) {
 				// Test will be implemented when BindingModel validation is added - T025
@@ -162,7 +162,7 @@ func TestResourceIDValidationInLegacyProperties(t *testing.T) {
 		// Legacy 'name' property should follow same validation rules as group_id
 		validNames := []string{"valid_name", "name123", "test-name"}
 		invalidNames := []string{"-invalid", "invalid-", "invalid@char"}
-		
+
 		for _, validName := range validNames {
 			t.Run("ValidName_"+validName, func(t *testing.T) {
 				model := RoleBindingResourceModel{
@@ -173,7 +173,7 @@ func TestResourceIDValidationInLegacyProperties(t *testing.T) {
 				assert.True(t, diags.HasError(), "Legacy name validation not yet implemented")
 			})
 		}
-		
+
 		for _, invalidName := range invalidNames {
 			t.Run("InvalidName_"+invalidName, func(t *testing.T) {
 				model := RoleBindingResourceModel{
@@ -185,12 +185,12 @@ func TestResourceIDValidationInLegacyProperties(t *testing.T) {
 			})
 		}
 	})
-	
+
 	t.Run("LegacyRoleValidation", func(t *testing.T) {
 		// Legacy 'role' property should follow same validation rules as role IDs
 		validRoles := []string{"valid_role", "role123", "custom-role"}
 		invalidRoles := []string{"-invalid", "invalid-", "invalid@char"}
-		
+
 		for _, validRole := range validRoles {
 			t.Run("ValidRole_"+validRole, func(t *testing.T) {
 				model := RoleBindingResourceModel{
@@ -201,7 +201,7 @@ func TestResourceIDValidationInLegacyProperties(t *testing.T) {
 				assert.True(t, diags.HasError(), "Legacy role validation not yet implemented")
 			})
 		}
-		
+
 		for _, invalidRole := range invalidRoles {
 			t.Run("InvalidRole_"+invalidRole, func(t *testing.T) {
 				model := RoleBindingResourceModel{
@@ -213,12 +213,12 @@ func TestResourceIDValidationInLegacyProperties(t *testing.T) {
 			})
 		}
 	})
-	
+
 	t.Run("LegacyMemberResourceIDValidation", func(t *testing.T) {
 		// Legacy member resource_id should follow same validation rules
 		validMemberIDs := []string{"person_123", "service_456", "group_789"}
 		invalidMemberIDs := []string{"-invalid", "invalid-", "invalid@char"}
-		
+
 		for _, validID := range validMemberIDs {
 			t.Run("ValidMemberID_"+validID, func(t *testing.T) {
 				// Test will be implemented when member validation is added - T025
@@ -228,7 +228,7 @@ func TestResourceIDValidationInLegacyProperties(t *testing.T) {
 				assert.False(t, isValid, "Legacy member resource ID validation not yet implemented - should fail")
 			})
 		}
-		
+
 		for _, invalidID := range invalidMemberIDs {
 			t.Run("InvalidMemberID_"+invalidID, func(t *testing.T) {
 				// Test will be implemented when member validation is added - T025
@@ -248,7 +248,7 @@ func TestResourceIDValidationRegexPattern(t *testing.T) {
 	// - Can contain alphanumeric, underscore, hyphen in middle
 	// - Must end with alphanumeric
 	// - Minimum length 1 (single alphanumeric character allowed)
-	
+
 	t.Run("PatternBoundaryTests", func(t *testing.T) {
 		boundaryTests := []struct {
 			input    string
@@ -272,11 +272,11 @@ func TestResourceIDValidationRegexPattern(t *testing.T) {
 			{"_", false, "only underscore"},
 			{"-", false, "only hyphen"},
 		}
-		
+
 		for _, test := range boundaryTests {
 			t.Run("Pattern_"+test.input+"_"+test.reason, func(t *testing.T) {
 				isValid := validateResourceID(test.input)
-				
+
 				// Test should fail until validation is implemented
 				if test.expected {
 					assert.False(t, isValid, "Resource ID validation not implemented - valid patterns should fail")

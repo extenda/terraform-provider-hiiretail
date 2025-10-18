@@ -17,12 +17,12 @@ type RoleBindingResourceModel struct {
 	GroupID types.String `tfsdk:"group_id"`
 	Roles   types.List   `tfsdk:"roles"`
 	Binding types.List   `tfsdk:"binding"`
-	
+
 	// Legacy properties (deprecated)
 	Name    types.String `tfsdk:"name"`
 	Role    types.String `tfsdk:"role"`
 	Members types.List   `tfsdk:"members"`
-	
+
 	// Common properties
 	ID          types.String `tfsdk:"id"`
 	LastUpdated types.String `tfsdk:"last_updated"`
@@ -236,7 +236,7 @@ func TestNewPropertyStructureValidation(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			diags := tt.input.Validate()
-			
+
 			// These tests MUST fail until implementation is complete in Phase 3.3
 			if tt.expectedResult == "valid" {
 				// Should have no errors when properly implemented
@@ -259,7 +259,7 @@ func TestNewPropertyConstraints(t *testing.T) {
 			"testGroup123",
 			"test_123-group",
 		}
-		
+
 		invalidGroupIDs := []string{
 			"-invalid_start",
 			"invalid_end-",
@@ -267,7 +267,7 @@ func TestNewPropertyConstraints(t *testing.T) {
 			"invalid space",
 			"",
 		}
-		
+
 		for _, validID := range validGroupIDs {
 			t.Run("Valid_"+validID, func(t *testing.T) {
 				model := RoleBindingResourceModel{
@@ -278,7 +278,7 @@ func TestNewPropertyConstraints(t *testing.T) {
 				assert.True(t, diags.HasError(), "Test should fail until validation logic is implemented")
 			})
 		}
-		
+
 		for _, invalidID := range invalidGroupIDs {
 			t.Run("Invalid_"+invalidID, func(t *testing.T) {
 				model := RoleBindingResourceModel{
@@ -290,7 +290,7 @@ func TestNewPropertyConstraints(t *testing.T) {
 			})
 		}
 	})
-	
+
 	t.Run("RolesArrayConstraints", func(t *testing.T) {
 		// Test minimum 1 role required
 		model := RoleBindingResourceModel{
@@ -300,7 +300,7 @@ func TestNewPropertyConstraints(t *testing.T) {
 		diags := model.Validate()
 		assert.True(t, diags.HasError(), "Test should fail until validation logic is implemented")
 	})
-	
+
 	t.Run("BindingArrayConstraints", func(t *testing.T) {
 		// Test minimum 1 binding required
 		model := RoleBindingResourceModel{

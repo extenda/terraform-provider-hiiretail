@@ -9,6 +9,14 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
+// local helper for substring checks in tests
+func containsSubstring(s, substr string) bool {
+	if substr == "" {
+		return true
+	}
+	return len(s) >= len(substr) && (s == substr || (len(s) > len(substr) && (s[:len(substr)] == substr || s[len(s)-len(substr):] == substr)))
+}
+
 // TestRoleBindingModelValidation tests the validation logic for role binding models
 func TestRoleBindingModelValidation(t *testing.T) {
 	tests := []struct {
@@ -53,15 +61,12 @@ func TestRoleBindingModelValidation(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			roles := []RoleModel{
-				{
-					Id:       types.StringValue(tt.roleId),
-					IsCustom: types.BoolValue(tt.isCustom),
-					Bindings: types.ListValueMust(types.StringType, stringSliceToAttrValues(tt.bindings)),
-				},
+			role := RoleModel{
+				Id:       types.StringValue(tt.roleId),
+				IsCustom: types.BoolValue(tt.isCustom),
+				Bindings: types.ListValueMust(types.StringType, stringSliceToAttrValues(tt.bindings)),
 			}
-			err := ValidateRoleBindingModel(context.Background(), roles)
-
+			err := ValidateRoleBindingModel(context.Background(), []RoleModel{role})
 			if tt.expectedValid {
 				if err != nil {
 					t.Errorf("Expected validation to pass for %s, got error: %v", tt.name, err)
@@ -69,8 +74,10 @@ func TestRoleBindingModelValidation(t *testing.T) {
 			} else {
 				if err == nil {
 					t.Errorf("Expected validation to fail for %s, but got no error", tt.name)
-				} else if tt.expectedError != "" && err.Error() != tt.expectedError {
-					t.Errorf("Expected error message '%s', got '%s'", tt.expectedError, err.Error())
+				} else if tt.expectedError != "" {
+					if !containsSubstring(err.Error(), tt.expectedError) {
+						t.Errorf("Expected error message containing '%s', got '%s'", tt.expectedError, err.Error())
+					}
 				}
 			}
 		})

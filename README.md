@@ -1,6 +1,22 @@
+# Governance & Constitution
+
+This project is governed by the [PROJECT_CONSTITUTION.md](./PROJECT_CONSTITUTION.md) and [.specify/memory/constitution.md](.specify/memory/constitution.md). All features, resources, and data sources must:
+
+- Use the HashiCorp Terraform Plugin Framework for all development
+- Implement Terraform Plugin Protocol Version 6
+- Follow HashiCorp Provider Design Principles:
+  - Focus on a single API or problem domain
+  - Each resource represents a single API object
+  - Resource and attribute schemas closely match the underlying API
+  - Resources MUST be importable
+  - Provider MUST maintain state continuity and backwards compatibility
+  - Provider MUST follow Semantic Versioning 2.0.0
+- Pass all constitutional gates (CRUD, authentication, testing, documentation, etc)
+
+For details, see [PROJECT_CONSTITUTION.md](./PROJECT_CONSTITUTION.md) and [.specify/memory/constitution.md](.specify/memory/constitution.md).
 # HiiRetail Terraform Provider
 
-The HiiRetail Terraform Provider enables management of HiiRetail platform resources through Infrastructure as Code. This unified provider supports multiple HiiRetail APIs, starting with Identity and Access Management (IAM) operations including user groups, custom roles, resources, and role bindings. Future versions will extend support to additional APIs like OCMS (OAuth Client Management Service).
+The HiiRetail Terraform Provider enables management of HiiRetail platform resources through Infrastructure as Code. This provider is built using the official [Terraform Plugin Framework](https://developer.hashicorp.com/terraform/plugin/framework) and implements [Terraform Plugin Protocol Version 6](https://developer.hashicorp.com/terraform/plugin/terraform-plugin-protocol#protocol-version-6) for maximum compatibility and maintainability. It supports multiple HiiRetail APIs, starting with Identity and Access Management (IAM) operations including user groups, custom roles, resources, and role bindings. Future versions will extend support to additional APIs like OCMS (OAuth Client Management Service).
 
 ## 📦 Installation
 

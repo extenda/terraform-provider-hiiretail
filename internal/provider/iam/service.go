@@ -11,9 +11,14 @@ import (
 )
 
 // Service provides IAM API operations
+// RawClient is an interface for API clients with Do method
+type RawClient interface {
+	Do(ctx context.Context, req *client.Request) (*client.Response, error)
+}
+
 type Service struct {
-	client    *client.ServiceClient
-	rawClient *client.Client // For direct API calls that need custom paths (like V2 API)
+	client    clientService
+	rawClient RawClient // For direct API calls that need custom paths (like V2 API)
 	tenantID  string
 }
 
@@ -24,6 +29,15 @@ func NewService(apiClient *client.Client, tenantID string) *Service {
 		rawClient: apiClient,
 		tenantID:  tenantID,
 	}
+}
+
+// clientService defines the minimal interface we use from client.ServiceClient
+// allowing tests to inject a mock implementation.
+type clientService interface {
+	Get(ctx context.Context, path string, query map[string]string) (*client.Response, error)
+	Post(ctx context.Context, path string, body interface{}) (*client.Response, error)
+	Put(ctx context.Context, path string, body interface{}) (*client.Response, error)
+	Delete(ctx context.Context, path string) (*client.Response, error)
 }
 
 // TenantID returns the tenant ID for this service
@@ -130,18 +144,18 @@ func (s *Service) ListGroups(ctx context.Context, req *ListGroupsRequest) (*List
 	if err := client.CheckResponse(resp); err != nil {
 		return nil, err
 	}
-
+	if resp == nil {
+		return nil, fmt.Errorf("nil response from API")
+	}
 	var groups []Group
 	if err := json.Unmarshal(resp.Body, &groups); err != nil {
 		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
-
 	// Wrap the groups array in the expected response structure
 	result := &ListGroupsResponse{
 		Groups: groups,
 		Total:  len(groups),
 	}
-
 	return result, nil
 }
 
@@ -161,12 +175,13 @@ func (s *Service) GetGroup(ctx context.Context, id string) (*Group, error) {
 	if err := client.CheckResponse(resp); err != nil {
 		return nil, err
 	}
-
+	if resp == nil {
+		return nil, fmt.Errorf("nil response from API")
+	}
 	var group Group
 	if err := json.Unmarshal(resp.Body, &group); err != nil {
 		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
-
 	return &group, nil
 }
 

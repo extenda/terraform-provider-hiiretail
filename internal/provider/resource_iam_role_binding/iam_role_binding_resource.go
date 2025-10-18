@@ -3,6 +3,7 @@ package resource_iam_role_binding
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -522,7 +523,12 @@ func isNotFoundError(err error) bool {
 }
 
 func generateUUID() string {
-	// TODO: Implement proper UUID generation
-	// This is a placeholder for demonstration
-	return "550e8400-e29b-41d4-a716-446655440000"
+	// Generate a simple random UUID-like string
+	// In production, you'd use a proper UUID library
+	return fmt.Sprintf("%x-%x-%x-%x-%x",
+		rand.Int63(),
+		rand.Int63(),
+		rand.Int63(),
+		rand.Int63(),
+		rand.Int63())
 }
