@@ -43,21 +43,41 @@ jobs:
         run: |
           # Run tests for the iam package and generate coverage
           go test -coverprofile=coverage.out ./internal/provider/iam
-          # Extract the coverage percentage as a float (e.g., 92.3%) and remove the trailing '%'
-          COVERAGE=$(go tool cover -func=coverage.out | awk '/service.go:/ {gsub(/%/,"",$3); print $3}')
-          # If COVERAGE is empty or not a number, fail early
+
+          # Compute per-file coverage robustly from the coverage profile.
+          # coverage.out format (per-line):
+          #   <filename>:<start>,<end> <num_statements> <count>
+          # We'll sum the num_statements for each range, and count them as covered
+          # when count>0. This gives an accurate per-file coverage percentage.
+          TARGET="internal/provider/iam/service.go"
+          COVERAGE=$(awk -v f="$TARGET" '
+            NR>1 {
+              # $1 = filename:pos, $2 = num_statements, $3 = count
+              split($1, parts, ":"); fname = parts[1]; stmts = $2; cnt = $3;
+              files[fname]["stmts"] += stmts;
+              if (cnt > 0) files[fname]["cov"] += stmts;
+            }
+            END {
+              if (files[f]["stmts"] == 0) {
+                # no data for file
+                exit 0
+              }
+              pct = files[f]["cov"] / files[f]["stmts"] * 100;
+              printf("%.1f", pct);
+            }' coverage.out)
+
           if ! echo "$COVERAGE" | grep -E '^[0-9]+(\.[0-9]+)?$' >/dev/null; then
-            echo "ERROR: Could not parse coverage value for service.go: '$COVERAGE'"
+            echo "ERROR: Could not compute coverage for $TARGET (coverage.out missing or malformed)"
             exit 1
           fi
-          # Compare as float using bc; threshold is 90.0
+
           THRESHOLD=90.0
           cmp=$(echo "$COVERAGE < $THRESHOLD" | bc -l)
           if [ "$cmp" -eq 1 ]; then
-            echo "ERROR: Code coverage for service.go is below ${THRESHOLD}% ($COVERAGE%)"
+            echo "ERROR: Code coverage for $TARGET is below ${THRESHOLD}% ($COVERAGE%)"
             exit 1
           else
-            echo "Code coverage for service.go is $COVERAGE% (threshold: ${THRESHOLD}%)"
+            echo "Code coverage for $TARGET is $COVERAGE% (threshold: ${THRESHOLD}%)"
           fi
       - name: Fetch sonarcloud token
         uses: extenda/actions/gcp-secret-manager@v0
