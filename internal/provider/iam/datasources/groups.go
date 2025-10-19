@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
@@ -209,4 +210,57 @@ func (d *GroupsDataSource) Read(ctx context.Context, req datasource.ReadRequest,
 	resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)
 
 	tflog.Trace(ctx, "read groups data source")
+}
+
+// mapGroupsToListValue converts the API ListGroupsResponse to a Terraform types.List value.
+func mapGroupsToListValue(listResp *iam.ListGroupsResponse) (types.List, diag.Diagnostics) {
+	var diags diag.Diagnostics
+	groupElements := make([]attr.Value, len(listResp.Groups))
+	for i, group := range listResp.Groups {
+		groupObj := map[string]attr.Value{
+			"id":           types.StringValue(group.ID),
+			"name":         types.StringValue(group.Name),
+			"description":  types.StringValue(group.Description),
+			"member_count": types.Int64Value(int64(len(group.Members))),
+			"created_at":   types.StringValue(group.CreatedAt),
+		}
+
+		objType := types.ObjectType{
+			AttrTypes: map[string]attr.Type{
+				"id":           types.StringType,
+				"name":         types.StringType,
+				"description":  types.StringType,
+				"member_count": types.Int64Type,
+				"created_at":   types.StringType,
+			},
+		}
+
+		objValue, ds := types.ObjectValue(objType.AttrTypes, groupObj)
+		diags.Append(ds...)
+		if diags.HasError() {
+			return types.ListNull(types.ObjectType{}), diags
+		}
+
+		groupElements[i] = objValue
+	}
+
+	listType := types.ListType{
+		ElemType: types.ObjectType{
+			AttrTypes: map[string]attr.Type{
+				"id":           types.StringType,
+				"name":         types.StringType,
+				"description":  types.StringType,
+				"member_count": types.Int64Type,
+				"created_at":   types.StringType,
+			},
+		},
+	}
+
+	listValue, ds := types.ListValue(listType.ElemType, groupElements)
+	diags.Append(ds...)
+	if diags.HasError() {
+		return types.ListNull(listType.ElemType), diags
+	}
+
+	return listValue, diags
 }
