@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
@@ -218,4 +219,67 @@ func (d *RolesDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)
 
 	tflog.Trace(ctx, "read roles data source")
+}
+
+// mapRolesToListValue converts []iam.Role to Terraform types.List
+func mapRolesToListValue(roles []iam.Role) (types.List, diag.Diagnostics) {
+	var diags diag.Diagnostics
+	roleElements := make([]attr.Value, len(roles))
+	for i, role := range roles {
+		roleObj := map[string]attr.Value{
+			"id":          types.StringValue(role.ID),
+			"name":        types.StringValue(role.Name),
+			"title":       types.StringValue(role.Title),
+			"description": types.StringValue(role.Description),
+			"stage":       types.StringValue(role.Stage),
+			"type":        types.StringValue(role.Type),
+		}
+
+		objType := types.ObjectType{
+			AttrTypes: map[string]attr.Type{
+				"id":          types.StringType,
+				"name":        types.StringType,
+				"title":       types.StringType,
+				"description": types.StringType,
+				"stage":       types.StringType,
+				"type":        types.StringType,
+			},
+		}
+
+		objValue, ds := types.ObjectValue(objType.AttrTypes, roleObj)
+		diags.Append(ds...)
+		if diags.HasError() {
+			return types.ListNull(listTypeElem()), diags
+		}
+
+		roleElements[i] = objValue
+	}
+
+	listType := types.ListType{ElemType: types.ObjectType{AttrTypes: map[string]attr.Type{
+		"id":          types.StringType,
+		"name":        types.StringType,
+		"title":       types.StringType,
+		"description": types.StringType,
+		"stage":       types.StringType,
+		"type":        types.StringType,
+	}}}
+
+	listValue, ds := types.ListValue(listType.ElemType, roleElements)
+	diags.Append(ds...)
+	if diags.HasError() {
+		return types.ListNull(listType.ElemType), diags
+	}
+
+	return listValue, diags
+}
+
+func listTypeElem() attr.Type {
+	return types.ObjectType{AttrTypes: map[string]attr.Type{
+		"id":          types.StringType,
+		"name":        types.StringType,
+		"title":       types.StringType,
+		"description": types.StringType,
+		"stage":       types.StringType,
+		"type":        types.StringType,
+	}}
 }

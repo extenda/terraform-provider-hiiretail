@@ -233,6 +233,10 @@ func (c *Client) calculateBackoff(attempt int) time.Duration {
 	if backoff < min {
 		backoff = min
 	}
+	
+	if backoff > max {
+		backoff = max
+	}
 
 	return backoff
 }

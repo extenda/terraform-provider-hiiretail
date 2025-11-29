@@ -44,41 +44,48 @@ jobs:
           # Run tests for the iam package and generate coverage
           go test -coverprofile=coverage.out ./internal/provider/iam
 
-          # Compute per-file coverage robustly from the coverage profile.
-          # coverage.out format (per-line):
-          #   <filename>:<start>,<end> <num_statements> <count>
-          # We'll sum the num_statements for each range, and count them as covered
-          # when count>0. This gives an accurate per-file coverage percentage.
-          TARGET="internal/provider/iam/service.go"
-          COVERAGE=$(awk -v f="$TARGET" '
-            NR>1 {
-              # $1 = filename:pos, $2 = num_statements, $3 = count
-              split($1, parts, ":"); fname = parts[1]; stmts = $2; cnt = $3;
-              files[fname]["stmts"] += stmts;
-              if (cnt > 0) files[fname]["cov"] += stmts;
-            }
-            END {
-              if (files[f]["stmts"] == 0) {
-                # no data for file
-                exit 0
-              }
-              pct = files[f]["cov"] / files[f]["stmts"] * 100;
-              printf("%.1f", pct);
-            }' coverage.out)
-
-          if ! echo "$COVERAGE" | grep -E '^[0-9]+(\.[0-9]+)?$' >/dev/null; then
-            echo "ERROR: Could not compute coverage for $TARGET (coverage.out missing or malformed)"
-            exit 1
-          fi
-
-          THRESHOLD=90.0
-          cmp=$(echo "$COVERAGE < $THRESHOLD" | bc -l)
-          if [ "$cmp" -eq 1 ]; then
-            echo "ERROR: Code coverage for $TARGET is below ${THRESHOLD}% ($COVERAGE%)"
-            exit 1
-          else
-            echo "Code coverage for $TARGET is $COVERAGE% (threshold: ${THRESHOLD}%)"
-          fi
+          # Compute per-file coverage robustly from the coverage profile using Python
+          python3 << 'EOF'
+          import sys
+          target = "internal/provider/iam/service.go"
+          threshold = 90.0
+          
+          files_data = {}
+          with open('coverage.out', 'r') as f:
+              for line in f:
+                  if line.startswith('mode:'):
+                      continue
+                  parts = line.strip().split()
+                  if len(parts) < 3:
+                      continue
+                  # Full path: github.com/extenda/hiiretail-terraform-providers/internal/provider/iam/service.go:26.69,32.2
+                  full_path = parts[0].split(':')[0]
+                  # Extract the relative path (after the module prefix)
+                  if 'hiiretail-terraform-providers/' in full_path:
+                      filename = full_path.split('hiiretail-terraform-providers/')[-1]
+                  else:
+                      filename = full_path
+                      
+                  statements = int(parts[1])
+                  count = int(parts[2])
+                  
+                  if filename not in files_data:
+                      files_data[filename] = {'stmts': 0, 'cov': 0}
+                  files_data[filename]['stmts'] += statements
+                  if count > 0:
+                      files_data[filename]['cov'] += statements
+          
+          if target not in files_data or files_data[target]['stmts'] == 0:
+              print(f"ERROR: No coverage data found for {target}")
+              sys.exit(1)
+          
+          coverage_pct = (files_data[target]['cov'] / files_data[target]['stmts']) * 100
+          print(f"Code coverage for {target} is {coverage_pct:.1f}% (threshold: {threshold}%)")
+          
+          if coverage_pct < threshold:
+              print(f"ERROR: Code coverage is below {threshold}%")
+              sys.exit(1)
+          EOF
       - name: Fetch sonarcloud token
         uses: extenda/actions/gcp-secret-manager@v0
         with:
