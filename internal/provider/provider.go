@@ -216,6 +216,7 @@ func (p *HiiRetailProvider) DataSources(ctx context.Context) []func() datasource
 		// IAM data sources
 		datasources.NewGroupsDataSource,
 		datasources.NewRolesDataSource,
+		datasources.NewResourceDataSource,
 	}
 }
 
